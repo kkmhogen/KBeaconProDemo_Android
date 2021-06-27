@@ -10,7 +10,7 @@ With this SDK, you can scan and configure the KBeacon device. The SDK include fo
 *	KBAuthHandler: Responsible for the authentication operation with the KBeacon device after the connection is established.  
 *	KBCfgHandler：Responsible for configuring parameters related to KBeacon devices.  
 * DFU Library: Responsible for KBeacon firmware update.
-![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/kbeacon_class_arc.png?raw=true)
+![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/master/kbeacon_class_arc.png?raw=true)
 
 **Scanning Stage**
 
@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.0.3'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.0.6'
 }
 ```
 
@@ -277,7 +277,7 @@ mBeacon.disconnect();
 ### 4.3 Configure parameters
 #### 4.3.1 Advertisement type
 KBeacon devices can support broadcasting multiple type advertisement packets in parallel.  
-For example, advertisement period was set to 500ms. Advertisement type was set to “iBeacon + TLM + System”, then the device will send advertisement packet like follow.   
+For example, advertisement type was set to “iBeacon + TLM + System”, then the device will send advertisement packet like follow.   
 
 |Slot No.|0|1|2|3|4|
 |----|----|----|----|----|----|
@@ -720,7 +720,7 @@ void updateModifyParaToDevice()
   &nbsp;&nbsp; 1. Setting slot 0 to iBeacon advertisement(adv period = 211.25ms, trigger only adv = true).  
   &nbsp;&nbsp; 2. Add a single button trigger(Trigger No = 0, Trigger type = Btn single click, Action = advertisement, Adv slot = 0, Adv duration = 20).  
 	&nbsp;&nbsp;  
-	![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/only_adv_when_trigger.png?raw=true)
+	![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/master/only_adv_when_trigger.png?raw=true)
 
  Example 2:  Trigger advertisment
 	&nbsp;For some scenario, we need to continuously monitor the KBeacon to ensure that the device was alive. The device usually broadcasting iBeacon1(UUID=xxx1) , and we want to trigger the broadcast iBeacon2(uuid=xxx2) when the button is pressed.   
@@ -729,7 +729,7 @@ void updateModifyParaToDevice()
 	&nbsp;We set an larger advertisement interval during alive advertisement and a short advertisement interval when trigger event happened, so we can achieve a balance between power consumption and triggers advertisement be easily detected.  
   &nbsp;&nbsp; 3. Add a single button trigger(Trigger No = 0, Trigger type = Btn single click, Action = advertisement, Adv slot = 1, Adv duration = 20).  
 	 &nbsp;&nbsp;
- 	![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/always_adv_with_trigger.png?raw=true)
+ 	![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/master/always_adv_with_trigger.png?raw=true)
 
 
 
@@ -1428,7 +1428,7 @@ Through the DFU function, you can upgrade the firmware of the device. Our DFU fu
 * KBFirmwareDownload: Responsible for download the JSON or firmware from KKM clouds.
 * DFUService: This DFU service that implementation Nordic's DFU library.
 * NotificationActivity: During the upgrade, a notification will pop up, click on the notification to enter this activity.
-![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/kbeacon_dfu_arc.png?raw=true)
+![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/master/kbeacon_dfu_arc.png?raw=true)
 
 ### 5.1 Add DFU function to the application.
 1. The DFU library need download the latest firmware from KKM cloud server. So you need add follow permission into AndroidManifest.xml
