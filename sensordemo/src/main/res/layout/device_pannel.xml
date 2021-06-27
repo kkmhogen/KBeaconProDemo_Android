@@ -1,0 +1,279 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true">
+
+
+    <TextView
+        android:id="@+id/connection_states"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/disconnected"
+        android:textSize="18sp" />
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/beaconConnSetting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/BEACON_ADV_TYPE" />
+
+                    <TextView
+                        android:id="@+id/beaconType"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/BEACON_MODEL_TYPE" />
+
+                    <TextView
+                        android:id="@+id/beaconModle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+
+
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/button_trigger_command"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:gravity="left"
+                android:orientation="horizontal"
+                android:weightSum="1.0">
+
+
+                <Button
+                    android:id="@+id/readBtnTriggerPara"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/read_btn_trigger"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/enableBtnAdvTrigger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/enable_btn_trigger_to_adv"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/enableBtnAppTrigger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/enable_btn_trigger_to_app"
+                    android:textAllCaps="false" />
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/motion_sensor_command"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:gravity="left"
+                android:orientation="horizontal"
+                android:weightSum="1.0">
+
+
+
+                <Button
+                    android:id="@+id/enableAccTrigger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/ENABLE_MOTION_TRIGGER"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/disableAccAppTrigger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/disable_motion_trigger"
+                    android:textAllCaps="false" />
+
+
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/temp_humidity_sensor_command"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:gravity="left"
+                android:orientation="horizontal"
+                android:weightSum="1.0">
+
+                <Button
+                    android:id="@+id/enableAccAdvertisement"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/ENABLE_AXIS_ADVERTISEMENT"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/enableTHAdvertisement"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/ENABLE_HT_ADVERTISEMENT"
+                    android:textAllCaps="false" />
+
+
+                <Button
+                    android:id="@+id/viewTHDataHistory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/VIEW_TEMP_HUMIDITY_HISTORY"
+                    android:textAllCaps="false" />
+
+            </LinearLayout>
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/temp_humidity_sensor_trigger"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:gravity="left"
+                android:orientation="horizontal"
+                android:weightSum="1.0">
+
+                <Button
+                    android:id="@+id/enableTHChangeTriggerEvtRpt2Adv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/enable_th_trigger_adv"
+                    android:textAllCaps="false" />
+
+
+                <Button
+                    android:id="@+id/enableTHChangeTriggerEvtRpt2App"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/enable_th_change_report"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/enableRealtimeTHDataToApp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/enable_th_realtime_report"
+                    android:textAllCaps="false" />
+
+
+            </LinearLayout>
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/other_sensor_command"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:gravity="left"
+                android:orientation="horizontal"
+                android:weightSum="1.0">
+
+
+                <Button
+                    android:id="@+id/dfuDevice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/kb_dfu_device" />
+
+
+                <Button
+                    android:id="@+id/ringDevice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/ring_device_btn_title"
+                    android:textAllCaps="false" />
+
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

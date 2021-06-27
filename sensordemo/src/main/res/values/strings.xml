@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2013 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources>
+    <string name="Dialog_Cancel">Cancel</string>
+    <string name="track_setting">Setting</string>
+
+    <string name="app_name">iBeaconDemo</string>
+    <string name="ble_not_supported">Devices does not support ble4.0 </string>
+    <string name="ble_function_disable">Bluetooth function is not enable on phone.</string>
+    <string name="label_data">Data:</string>
+    <string name="label_device_address">Address:</string>
+    <string name="label_state">State:</string>
+    <string name="no_data">No data</string>
+    <string name="connected">Connected</string>
+    <string name="connecting">Connecteing</string>
+    <string name="disconnected">Disconnect</string>
+    <string name="unknown">Unknown</string>
+    <string name="title_devices">Test</string>
+    <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+
+    <string name="unknown_device">Unknown device</string>
+    <string name="unknown_characteristic">Unknown characteristic</string>
+    <string name="unknown_service">Unknown service</string>
+
+    <string name="title_activity_lock">locker</string>
+
+
+    <!-- Menu items -->
+    <string name="startScanning">Scan</string>
+    <string name="menu_remove">Remove</string>
+    <string name="menu_stop">Stop</string>
+    <string name="menu_shut">TurnOff</string>
+    <string name="menu_setting">Setting</string>
+
+    <!--itrack desc-->
+    <string name="test_result_succ">Pass</string>
+    <string name="test_result_fail">WeakSignal</string>
+    <string name="track_name">KBeacon</string>
+    <string name="track_mac_address">FF:FF:FF:FF:FF:FF</string>
+    <string name="track_state">Status:</string>
+    <string name="title_activity_setting">Setting</string>
+
+    <string name="track_setting_save">Save</string>
+
+
+    <string name="menu_connect">Connect</string>
+    <string name="menu_disconnect">Disconnect</string>
+
+    <string name="Dialog_OK">OK</string>
+    <string name="version_desc">Version:</string>
+    <string name="battery_level">Battery Level:</string>
+
+    <string name="conn_error_title">Connect Failed</string>
+    <string name="auth_error_title">Authentication Failed, new setting an new password</string>
+    <string name="connect_error_timeout">Connect failed, please try it again. if it still failed, then reset Phone bluetooth and APP.</string>
+    <string name="connect_error_auth_format">Password format error, please input 16 number ascii password..</string>
+    <string name="test_number">TestNum</string>
+    <string name="VIB_ALERT_SW">Virbration Alert</string>
+    <string name="LOCK_ALERT_ON">ON</string>
+    <string name="LOCK_ALERT_OFF">OFF</string>
+    <string name="ALERT_TITLE">Alert:</string>
+    <string name="mdy_pwd_desc">Modify Password</string>
+    <string name="name_not_null">Name is black</string>
+    <string name="connected_discovered">Discovered</string>
+    <string name="new_name_dlg_title">New Name</string>
+    <string name="new_password_desc">new password</string>
+    <string name="confirm_password">Confirm your password</string>
+    <string name="Old_password_wrong">Old password is wrong</string>
+    <string name="new_password_not_equal">New password is not equal</string>
+    <string name="password_not_6_char">The password must be 6 characteristics.</string>
+    <string name="mdy_lock_name_desc">Modify Name</string>
+    <string name="cmd_low_battery_desc">Low Battery, not allowed lock!</string>
+    <string name="cmd_low_battery_title">Low Battery</string>
+    <string name="menu_dfu">dfu</string>
+    <string name="menu_refresh">refresh</string>
+    <string name="DUF_LABEL_DESC">StartDFU</string>
+    <string name="START_DFU_BUTTON_TITLE">Start</string>
+    <string name="BTN_TURNOFF_TITLE">TurnOff</string>
+
+    <string name="cmd_lock_fail_title">Lock failed</string>
+    <string name="cmd_lock_fail_desc">Lock failed, error!</string>
+
+    <string name="dfu_failed_title">DFU Failed</string>
+    <string name="dfu_failed_notsupport">fareware not support DFU</string>
+    <string name="app_version">version</string>
+    <string name="Old_password_hint">old password</string>
+
+    <string name="VIB_CFG_DOWNLOAD_SUCCESS">Modify virbration configruation success.</string>
+    <string name="ENABLE_AUTOUNLOCK_CFG_SUCC">Modify auto unlock configruation success.</string>
+    <string name="BEACON_RSSI_VALUE">RSSI:</string>
+    <string name="BEACON_MAJOR">Major:</string>
+    <string name="BEACON_MINOR">Minor:</string>
+    <string name="BEACON_CONN_ENABLE">Connectable:</string>
+    <string name="BEACON_TX_POWER">Tx:</string>
+    <string name="BEACON_BATTERY">Battery:</string>
+    <string name="BEACON_MAC_ADDRESS">Mac:</string>
+    <string name="BEACON_TEMP">Temp:</string>
+    <string name="BEACON_RTT">Rtt:</string>
+    <string name="BEACON_UUID">UUID:</string>
+    <string name="EDDYSTONE_URL_DESC">Url:</string>
+    <string name="EDDYSTONE_UID">UID:</string>
+    <string name="BEACON_MAJOR_EXPLAIN">(0~0xFFFF)</string>
+    <string name="BEACON_ADV_TYPE">Adv Type:</string>
+    <string name="BEACON_MODEL_TYPE">Model:</string>
+    <string name="ADV_TYPE_IBEACON">iBeacon</string>
+    <string name="ADV_TYPE_URL">EddyURL</string>
+    <string name="ADV_TYPE_UID">EddyUID</string>
+    <string name="BEACON_16_HEX">(16 Hex)</string>
+    <string name="BEACON_ADV_PERIOD">Adv Period:</string>
+    <string name="BEACON_ADV_PRD_EXP">(100~10000ms)</string>
+    <string name="EDIT_BEACON_TX_POWER">TxPower(dBm):</string>
+    <string name="BEACON_NEW_PWD">Change Password:</string>
+    <string name="BEACON_NEW_PWD_EXP">(6 character)</string>
+
+    <string name="BEACON_DOWNLOAD">Download configruation</string>
+
+    <string name="DISCOVER_SRV">DiscoverServing</string>
+    <string name="devMenuUpload">Save</string>
+    <string name="IBeaconSettingDesc">iBeacon Setting:</string>
+    <string name="CommonSetting">Common Setting:</string>
+
+    <string name="BEACON_NAME">Name:</string>
+    <string name="BEACON_NAME_EXP">(1~11 character)</string>
+    <string name="BEACON_PWD_EXP">(8~16 character)</string>
+    <string name="BEACON_ADV_PERIOD_FMT_ERROR">Beacon advertisement period format error(101~10000ms)</string>
+    <string name="BEACON_DEV_NAME_FMT_ERROR">Beacon name format error(1~16 character)</string>
+
+    <string name="EDDY_URL_FMT_ERROR">Eddystone Url format error.Please input like: http://www.kkmcn.com/</string>
+    <string name="IBEACON_MAJOR_FMT_ERROR">Apple iBeacon MajorID format error, valid input example: 0x00F1</string>
+    <string name="IBEACON_MINOR_FMT_ERROR">Apple iBeacon Minor format error, valid input eexample: 0x00F1</string>
+    <string name="IBEACON_UUID_FMT_ERROR">Apple iBeacon UUID format error</string>
+
+    <string name="auth_write_pwd_title">Please input unlock code</string>
+    <string name="authentication_failed_desc">Authentication failed, please check whether the unlock password is right!</string>
+    <string name="common_error_title">Error</string>
+    <string name="err_read_check_failed">Reading check failed, please try to upload again</string>
+    <string name="upload_config_paramaters">Upload Paramaters</string>
+    <string name="upload_data_success">Upload config paramaters to device successfully!</string>
+    <string name="upload_data_title">Upload successful</string>
+    <string name="upload_read_check_paramaters">Read paramaters from device to check</string>
+    <string name="upload_ready_paramaters">Starting</string>
+    <string name="upload_unlock_for_write">Unlocking device</string>
+    <string name="upload_write_paramaters">Write Config Paramaters to device</string>
+    <string name="err_no_data_chage_need_cfg">"No need upload paramaters to device during no config data changed "</string>
+    <string name="BEACON_OLD_PWD">DevicePassword:</string>
+    <string name="beacon_cfg_conn_enalbe">Connect Enable</string>
+    <string name="beacon_load_para_to_template_failed">No template config paramaters exist</string>
+    <string name="beacon_load_para_to_template_success">Load config paramaters success</string>
+    <string name="beacon_save_para_to_template_success">Save config paramaters success</string>
+
+    <string name="common_succ_title">Success</string>
+    <string name="device_list">device list</string>
+    <string name="BEACON_MAJOR_LIST">Major:</string>
+    <string name="BEACON_MINOR_LIST">Minor:</string>
+    <string name="KBEACON_ADV_NO_CONNECTABLE">The device is in Un-Connected advertisement and not allowed to be connect. Click the button on KBeacon or reinstall the battery to make it enter connectable advertisement.</string>
+    <string name="location_permit_needed_for_ble">The bluetooth need location permission during scan</string>
+    <string name="location_permit_for_ble_failed">Location permission not allowed, start ble scan failed.</string>
+    <string name="SCAN_FAILED_REBOOT">Start scan failed, please reboot Bluetooth and try it again.</string>
+    <string name="list_select_type">select</string>
+    <string name="ele_value_name">value</string>
+    <string name="disconnect_notice">notice</string>
+    <string name="disconnection_description">Connection disconnected.</string>
+    <string name="ble_device_connecting">Connecting</string>
+
+    <string name="activity_beacon_detail_title">Beacon Detail</string>
+
+    <string name="activity_cfg_name_title">Beacon Name</string>
+    <string name="name_max_then_12_ascii">Tip: Name must less then 17 ASCII characters</string>
+
+    <string name="activity_cfg_advprd_title">Adv Interval</string>
+    <string name="cfg_advprd_tip">Tip: the beacon is easy to be scaned and conneced if the advertisement interval is short, but the power consumption is higher</string>
+
+    <string name="activity_cfg_advflag_title">Connectable</string>
+    <string name="cfg_advflag_tip">Tip: 1 means Beacon is connectable, 0 means Beacon is un-connectable.</string>
+
+    <string name="activity_cfg_tx_power_title">Tx Power:</string>
+
+    <string name="activity_cfg_measure_pwr_title">Measure Power</string>
+    <string name="cfg_tx_measure_pwr_tip">Tip: Rx power at 1 meters, typical value range is -64dBm~-54dBm, Non-professionals are not recommanded to change this value</string>
+    <string name="cfg_tx_measure_pwr_set_error">Input value range error, the valid range is from -64dBm to -54dBm.</string>
+
+    <string name="activity_cfg_beacon_type_title">Beacon Type</string>
+    <string name="cfg_beacon_type_tip">Tip: if the beacon type set to iBeacon or Eddystone URL/UID, the Eddystone TLM packet will broadcasting at 10x interval as other beacon type.</string>
+
+    <string name="hex_input_prefex">0x</string>
+    <string name="tx_power_uint_dbm">dBm</string>
+
+
+    <string name="activity_cfg_uuid_title">UUID</string>
+    <string name="uuid_air_locate_name">Air Locate</string>
+    <string name="uuid_web_chat_name">Web Chat</string>
+    <string name="uuid_estimote_name">Estimote</string>
+    <string name="uuid_kkm_name">KKM</string>
+
+    <string name="activity_cfg_ibeacon_majorid_title">MajorID</string>
+    <string name="cfg_beacon_majorid_tip">Tip: input range 0x0000~0xFFFF, please input hexadecimal format data. for example: 0x00F1</string>
+
+    <string name="activity_cfg_ibeacon_minorid_title">MinorID</string>
+    <string name="cfg_beacon_minorid_tip">Tip: input range 0x0000~0xFFFF, please input hexadecimal format data. for example: 0x00F1</string>
+
+    <string name="activity_cfg_ibeacon_namespaceid_title">NamespaceID</string>
+    <string name="cfg_beacon_namespace_tip">Tip: please input 10 Byte Eddystone UID namespace ID. for example: 0x0000000000A1000000F1</string>
+    <string name="beacon_namespace_format_error">Eddystone UID namespace id format error, make sure it is 10 byte length. for example: 0x0000000000A1000000F1</string>
+
+    <string name="activity_cfg_ibeacon_serialid_title">SerialID</string>
+    <string name="cfg_beacon_serialid_tip">Tip: please input 6 Byte Eddystone UID serial ID. for example: 0x00A1000000F1</string>
+    <string name="beacon_serial_format_error">Eddystone UID serial id format error, make sure it is 10 byte length. for example: 0x00A1000000F1</string>
+
+    <string name="ble_filed_namespace_id">Namespace ID</string>
+    <string name="ble_filed_instance_id">Instance ID</string>
+    <string name="ble_filed_uuid">UUID</string>
+    <string name="ble_filed_majorid">Major ID</string>
+    <string name="ble_filed_minorid">Minor ID</string>
+
+    <string name="ble_filed_modify_pwd">Modify password</string>
+    <string name="password_input_tip">The password should be 16 ascii characteristic, the default password is 0000000000000000</string>
+    <string name="password_length_error">The password length is not 16 ascii characteristic.</string>
+    <string name="password_not_equal">The confirm new password does not match new password.</string>
+
+    <string name="activity_cfg_url_address_title">URL address</string>
+    <string name="cfg_field_url_tip">Tip: please input the URL address, example: https://www.google.com/</string>
+
+    <string name="activity_cfg_system_info_title">System Info</string>
+    <string name="activity_cfg_system_info_id">System ID</string>
+    <string name="activity_cfg_system_info_model">Model</string>
+    <string name="activity_cfg_system_info_version">Version</string>
+
+    <string name="bluetooth_error_need_reboot">Android OS Bluetooth error, please try to reboot bluetooth function(turn off bluetooth and turn on bluetooth). If it still failed, please try to reboot the phone.</string>
+
+    <string name="double_click_quit">Double click to quit app</string>
+
+    <string name="button_trigger_command">Button trigger command:</string>
+    <string name="motion_sensor_command">Motion trigger command:</string>
+    <string name="temp_humidity_sensor_command">TH&amp;Acc KSensor adv</string>
+    <string name="other_sensor_command">Other sensor sensor</string>
+    <string name="ring_device_btn_title">Ring device</string>
+
+    <string name="enable_btn_trigger_to_adv">TriggerEvt 2 Adv</string>
+    <string name="enable_btn_trigger_to_app">TriggerEvt 2 App</string>
+    <string name="read_btn_trigger">Read para</string>
+
+
+    <string name="enable_th_trigger_adv">TriggerEvt 2 Adv</string>
+    <string name="enable_th_change_report">TriggerEvt 2 App</string>
+    <string name="enable_th_realtime_report">RealtimeEvt 2 App</string>
+
+    <string name="DEVICE_DFU_TITLE">Firmware Update</string>
+    <string name="DEVICE_DFU_STATUS">Status</string>
+    <string name="DEVICE_CHECK_UPDATE">Check version…</string>
+    <string name="DEVICE_LATEST_VERSION">Current version is the latest, not need update.</string>
+    <string name="DFU_CONNECT_SERVICE_FAIL">Connect to cloud server failed, please check if the network was connected and give the application network permission</string>
+
+    <string name="DFU_FOUND_NEW_VERSION">A new version(%s) found, do you want to update?</string>
+    <string name="UPDATE_STARTED">Updating…</string>
+    <string name="DFU_TITLE">Update</string>
+
+    <string name="UPDATE_CONNECTING">Connecting for update</string>
+    <string name="UPDATE_UPLOADING">Upload firmware…</string>
+    <string name="UPDATE_DISCONNECTED">Device disconnected!</string>
+    <string name="UPDATE_ABORTED">Update aborted!</string>
+    <string name="UPDATE_CONNECTED">Device connected</string>
+    <string name="UPDATE_COMPLETE">Update success!</string>
+    <string name="UPDATE_NETWORK_FAIL">Network failure!</string>
+    <string name="NB_network_cloud_server_error">Cloud server error</string>
+    <string name="NB_network_file_not_exist">Cloud server file not exist</string>
+    <string name="UPDATE_FOUND_NEW_VERSION">found new version</string>
+    <string name="kb_dfu_device">Dfu</string>
+    <string name="menu_firmware_update">Update</string>
+    <string name="UPDATE_RELEASE_NOTES">Release notes:</string>
+
+    <string name="UPDATE_NOT_FOUND_NEW_VERSION">Failed to obtain the latest version information, please ensure that the Internet connection is successful.</string>
+
+    <string name="DFU_VERSION_MAKE_SURE">To ensure a successful upgrade, it is recommended that the distance between the mobile phone and the KBeacon device be less than 3 meters. Are you sure you want to upgrade?</string>
+    <string name="EXPORT_HISTORY_DATA_EMAIL_TITLE">Sensor data about device(mac:%1$s)</string>
+
+    <string name="update_ibeacon_2_tlm">iBeacon2TLM</string>
+    <string name="BEACON_TEMP_UINT">°C</string>
+    <string name="BEACON_HUM">Humidity:</string>
+    <string name="BEACON_VOLTAGE">Voltage:</string>
+    <string name="BEACON_TEMPERATURE">Temperature:</string>
+    <string name="BEACON_ACC_POS">Axis:</string>
+    <string name="LOAD_MOVING_DATA_FAILED">Load movement record timeout.</string>
+    <string name="load_data_complete">Read data complete, update %1$d records.</string>
+    <string name="load_data_complete_no_more_data">Read %1$d records, no more data</string>
+    <string name="track_clear_fail">Clear history data failed, please try it again later</string>
+    <string name="track_clear_success">Clear history data success</string>
+    <string name="no_data_to_export">No data need to export</string>
+    <string name="track_clear_history_desc">Once you clear the record, all distancing records will be lost, are you sure you want to continue?</string>
+    <string name="VIEW_TEMP_HUMIDITY_HISTORY">View T&amp;H History</string>
+    <string name="track_alarm_history_clear">Clear</string>
+    <string name="track_alarm_history_export">Export</string>
+
+    <string name="ENABLE_MOTION_TRIGGER">TriggerEvt to Adv</string>
+    <string name="disable_motion_trigger">Disable Trigger</string>
+
+    <string name="ENABLE_AXIS_ADVERTISEMENT">Include axis</string>
+    <string name="ENABLE_HT_ADVERTISEMENT">Include T&amp;H</string>
+    <string name="enable_th_adv_report">T&amp;H data to Adv</string>
+    <string name="TEMP_HUMIDITY_SETTING">T&amp;H Setting:</string>
+    <string name="TH_MEASURE_INTERVAL">Measure interval:</string>
+    <string name="TEMP_CHANGE_THD">Temperature change threshold:</string>
+    <string name="HUMIDITY_CHANGE_THD">Humidity change threshold:</string>
+
+    <string name="temp_humidity_sensor_trigger">Temperature&amp;humidity trigger</string>
+
+    <string name="RECEIVE_NOTIFY_DATA">Receive T&amp;H notify data, utc:%1$s, temperature:%2$f, humidity: %3$f</string>
+</resources>
