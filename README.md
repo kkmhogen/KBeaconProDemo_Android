@@ -7,10 +7,10 @@ With this SDK, you can scan and configure the KBeacon device. The SDK include fo
 
 * KBeacon: An instance of a KBeacon device, KBeaconsMgr creates an instance of KBeacon while it found a physical device. Each KBeacon instance has three properties: KBAdvPacketHandler, KBAuthHandler, KBCfgHandler.
 * KBAdvPacketHandler: parsing advertisement packet. This attribute is valid during the scan phase.  
-*	KBAuthHandler: Responsible for the authentication operation with the KBeacon device after the connection is established.  
-*	KBCfgHandler：Responsible for configuring parameters related to KBeacon devices.  
+* KBAuthHandler: Responsible for the authentication operation with the KBeacon device after the connection is established.  
+* KBCfgHandler：Responsible for configuring parameters related to KBeacon devices.  
 * DFU Library: Responsible for KBeacon firmware update.
-![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/master/kbeacon_class_arc.png?raw=true)
+![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/kbeacon_class_arc.png?raw=true)
 
 **Scanning Stage**
 
@@ -361,25 +361,9 @@ After app connects to device success, the app can update parameters of device.
 
 ##### 4.3.3.1 Update common parameters
 The app can modify the basic parameters of KBeacon through the KBCfgCommon class. The KBCfgCommon has follow parameters:
-
 * name: device name, the device name must <= 18 character
-
-* advType: beacon type, can be setting to iBeacon, KSesnor, Eddy TLM/UID/ etc.,
-
-* advPeriod: advertisement period, the value can be set to 100~10000ms
-
-* txPower: advertisement TX power, unit is dBm.
-
-* autoAdvAfterPowerOn: if autoAdvAfterPowerOn was setting to true, the beacon always advertisement if it has battery. If this value was setting to false, the beacon will power off if long press button for 5 seconds.
-
-* tlmAdvInterval: eddystone TLM advertisement interval. The default value is 10. The KBeacon will send 1 TLM advertisement every 10 advertisement packets
-
+* alwaysPowerOn: if alwaysPowerOn was setting to true, the beacon will not allowed turn off by long press button.
 * refPower1Meters: the rx power at 1 meters
-
-* advConnectable: is beacon advertisement can be connectable.  
-  **Warning:**   
-   if the app set the KBeacon to un-connectable, the app cannot connect to it again if it does not has button. If the device has button, the device can enter connect-able advertisement for 60 seconds when click on the button
-
 * password: device password, the password length must >= 8 character and <= 16 character.  
  **Warning:**   
  Be sure to remember the new password, you won’t be able to connect to the device if you forget the new password.
@@ -432,13 +416,25 @@ public void updateBeaconCommonPara()
 ```
 
 ##### 4.3.3.2 Update iBeacon parameters
-The app can modify the basic parameters of KBeacon through the KBCfgIBeacon class. The KBCfgIBeacon has follow parameters:
-uuid: iBeacon uuid
-majorID: iBeacon major ID
-minorID: iBeacon minor ID
-please make sure the KBeacon advertisement type was set to iBeacon.
+For all broadcast messages, such as iBeacon or Eddystone protocols, they include the following public parameters：
+* slotIndex: the advertisement instance No.
+* txPower: the tx power of the advertisement packet.
+* advType: advertisement type, can be setting to iBeacon, KSesnor, Eddy TLM/UID/ etc.,
+* advPeriod: this slot advertisement period, the value can be set to 100~20000ms
+* advMode : advertisement mode.
+* advTriggerOnly : When it is true, it means that this slot is not broadcast by default, it is only start broadcast when the Trigger event occurs.
+* advConnectable: is this slot advertisement can be connectable.  
+ **Warning:**   
+If all slot was setting to un-connectable, the app cannot connect to it again unless: 1. The KBeacon button was pressed while button trigger are not enable. or 2. The device was power on again and the device will be connectable in first 30 seconds after power on.
 
-example: set the KBeacon to broadcasting iBeacon packet
+
+ **iBeacon parameters:**  
+The app can enable iBeacon broadcast through the KBCfgIBeacon class. The KBCfgIBeacon has follow parameters:  
+* uuid:  iBeacon UUID
+* majorID: iBeacon major ID
+* minorID: iBeacon minor ID
+
+example: set the slot0 to broadcasting iBeacon packet
 ```Java
 void updateKBeaconToIBeacon()
 {
@@ -484,7 +480,7 @@ void updateKBeaconToIBeacon()
 }
 ```
 
-example: update KBeacon to hybrid iBeacon/EddyTLM.  
+example: set the slot0/slot1 to hybrid iBeacon/EddyTLM.  
 Sometimes we need KBeacon broadcasting both iBeacon and TLM packet (battery level, Temperature, power on times
 ```Java
 void updateKBeaconToIBeaconAndTLM()
@@ -720,7 +716,7 @@ void updateModifyParaToDevice()
   &nbsp;&nbsp; 1. Setting slot 0 to iBeacon advertisement(adv period = 211.25ms, trigger only adv = true).  
   &nbsp;&nbsp; 2. Add a single button trigger(Trigger No = 0, Trigger type = Btn single click, Action = advertisement, Adv slot = 0, Adv duration = 20).  
 	&nbsp;&nbsp;  
-	![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/master/only_adv_when_trigger.png?raw=true)
+	![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/only_adv_when_trigger.png?raw=true)
 
  Example 2:  Trigger advertisment
 	&nbsp;For some scenario, we need to continuously monitor the KBeacon to ensure that the device was alive. The device usually broadcasting iBeacon1(UUID=xxx1) , and we want to trigger the broadcast iBeacon2(uuid=xxx2) when the button is pressed.   
@@ -729,7 +725,7 @@ void updateModifyParaToDevice()
 	&nbsp;We set an larger advertisement interval during alive advertisement and a short advertisement interval when trigger event happened, so we can achieve a balance between power consumption and triggers advertisement be easily detected.  
   &nbsp;&nbsp; 3. Add a single button trigger(Trigger No = 0, Trigger type = Btn single click, Action = advertisement, Adv slot = 1, Adv duration = 20).  
 	 &nbsp;&nbsp;
- 	![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/master/always_adv_with_trigger.png?raw=true)
+ 	![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/always_adv_with_trigger.png?raw=true)
 
 
 
@@ -876,6 +872,7 @@ public void enableButtonTriggerEvent2App()
     });
 }
 
+//handle trigger event notify
 public void onNotifyDataReceived(KBeacon beacon, int nEventType, byte[] sensorData)
 {
   //check if Temperature and humidity trigger event
@@ -902,7 +899,7 @@ public void onNotifyDataReceived(KBeacon beacon, int nEventType, byte[] sensorDa
 
 ```
 
-3. The app can disable the button trigger  
+3. The app can disable the button trigger by:  
 ```Java
 //disable button trigger
 public void disableButtonTrigger() {
@@ -1230,7 +1227,7 @@ mSensorDataMsg.readSensorDataInfo(mBeacon,
 ```  
 
   Example2: The app read the temperature and humidity records without moving pointer.
-  The device has 100 records sorted by time, the app want to reading 20 records and start from the No 99. The Kbeacon will send records #99 ~ #90 to app by reverse order.     
+  The device has 100 records sorted by time, the app want to reading 10 records and start from the No 99. The Kbeacon will send records #99 ~ #90 to app by reverse order.     
   If the app does not known the last record no, then the value can set to INVALID_DATA_RECORD_POS.
 ```Java
  mSensorDataMsg.readSensorRecord(mBeacon,
