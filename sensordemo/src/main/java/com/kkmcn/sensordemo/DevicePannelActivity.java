@@ -427,57 +427,53 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             return;
         }
 
-        try {
-            //set slot0 to default alive advertisement
-            final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
-            iBeaconAdv.setSlotIndex(0);  //reuse previous slot
-            iBeaconAdv.setAdvPeriod(1280f);
-            iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
-            iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
-            iBeaconAdv.setAdvConnectable(true);
-            iBeaconAdv.setAdvTriggerOnly(false);  //always advertisement
-            iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B57FE67");
-            iBeaconAdv.setMajorID(12);
-            iBeaconAdv.setMinorID(10);
+        //set slot0 to default alive advertisement
+        final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
+        iBeaconAdv.setSlotIndex(0);  //reuse previous slot
+        iBeaconAdv.setAdvPeriod(1280f);
+        iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
+        iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
+        iBeaconAdv.setAdvConnectable(true);
+        iBeaconAdv.setAdvTriggerOnly(false);  //always advertisement
+        iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B57FE67");
+        iBeaconAdv.setMajorID(12);
+        iBeaconAdv.setMinorID(10);
 
-            //set slot 1 to trigger adv information
-            final KBCfgAdvIBeacon triggerAdv = new KBCfgAdvIBeacon();
-            triggerAdv.setSlotIndex(1);
-            triggerAdv.setAdvPeriod(200f);
-            triggerAdv.setAdvMode(KBAdvMode.Legacy);
-            triggerAdv.setTxPower(KBAdvTxPower.RADIO_Pos4dBm);
-            triggerAdv.setAdvConnectable(false);
-            triggerAdv.setAdvTriggerOnly(true);  //always advertisement
-            triggerAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570001");
-            triggerAdv.setMajorID(1);
-            triggerAdv.setMinorID(1);
+        //set slot 1 to trigger adv information
+        final KBCfgAdvIBeacon triggerAdv = new KBCfgAdvIBeacon();
+        triggerAdv.setSlotIndex(1);
+        triggerAdv.setAdvPeriod(200f);
+        triggerAdv.setAdvMode(KBAdvMode.Legacy);
+        triggerAdv.setTxPower(KBAdvTxPower.RADIO_Pos4dBm);
+        triggerAdv.setAdvConnectable(false);
+        triggerAdv.setAdvTriggerOnly(true);  //always advertisement
+        triggerAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570001");
+        triggerAdv.setMajorID(1);
+        triggerAdv.setMinorID(1);
 
-            //set trigger type
-            KBCfgTrigger btnTriggerPara = new KBCfgTrigger(0, KBTriggerType.BtnSingleClick);
-            btnTriggerPara.setTriggerAdvChangeMode(0);
-            btnTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
-            btnTriggerPara.setTriggerAdvSlot(1);
-            btnTriggerPara.setTriggerAdvTime(10);
+        //set trigger type
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger(0, KBTriggerType.BtnSingleClick);
+        btnTriggerPara.setTriggerAdvChangeMode(0);
+        btnTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
+        btnTriggerPara.setTriggerAdvSlot(1);
+        btnTriggerPara.setTriggerAdvTime(10);
 
-            //enable push button trigger
-            mTriggerButtonAdv.setEnabled(false);
-            ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
-            cfgList.add(iBeaconAdv);
-            cfgList.add(triggerAdv);
-            cfgList.add(btnTriggerPara);
-            this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
-                public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                    mTriggerButtonAdv.setEnabled(true);
-                    if (bConfigSuccess) {
-                        toastShow("enable push button trigger success");
-                    } else {
-                        toastShow("enable push button trigger error:" + error.errorCode);
-                    }
+        //enable push button trigger
+        mTriggerButtonAdv.setEnabled(false);
+        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+        cfgList.add(iBeaconAdv);
+        cfgList.add(triggerAdv);
+        cfgList.add(btnTriggerPara);
+        this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mTriggerButtonAdv.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable push button trigger success");
+                } else {
+                    toastShow("enable push button trigger error:" + error.errorCode);
                 }
-            });
-        } catch (KBException excpt) {
-            excpt.printStackTrace();
-        }
+            }
+        });
     }
 
     public void enableButtonTriggerEvent2App() {

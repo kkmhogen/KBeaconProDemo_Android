@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.0.6'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.0.7'
 }
 ```
 
@@ -123,92 +123,94 @@ else
 }
 ```
 
-3. Before start scanning, the app should implementation KBeaconMgr delegate for get scanning result
+4. Implementation KBeaconMgr delegate to get scanning result 
+The SDK will cache the last packet of each advertisement type that it scans, and it may cache up to 6 packet (iBeacon, URL, TLM, UID, KSensor, System). the application can call removeAdvPacket() in onBeaconDiscovered to delete the cached packet.
 ```Java
-KBeaconsMgr.KBeaconMgrDelegate beaconMgrDeletate = new KBeaconsMgr.KBeaconMgrDelegate()
-    {
-        //get advertisement packet during scanning callback
-        public void onBeaconDiscovered(KBeacon[] beacons)
-        {
-            for (KBeacon beacon: beacons)
-            {
-                //get beacon adv common info
-                Log.v(LOG_TAG, "beacon mac:" + beacon.getMac());
-                Log.v(LOG_TAG, "beacon name:" + beacon.getName());
-                Log.v(LOG_TAG,"beacon rssi:" + beacon.getRssi());
-
-                //get adv packet
-                for (KBAdvPacketBase advPacket : beacon.allAdvPackets())
-                {
-                    switch (advPacket.getAdvType())
-                    {
-                        case KBAdvType.KBAdvTypeIBeacon:
-                        {
-                            KBAdvPacketIBeacon advIBeacon = (KBAdvPacketIBeacon)advPacket;
-                            Log.v(LOG_TAG,"iBeacon uuid:" + advIBeacon.getUuid());
-                            Log.v(LOG_TAG,"iBeacon major:" + advIBeacon.getMajorID());
-                            Log.v(LOG_TAG,"iBeacon minor:" + advIBeacon.getMinorID());
-                            break;
-                        }
-
-                        case KBAdvType.KBAdvTypeEddyTLM:
-                        {
-                            KBAdvPacketEddyTLM advTLM = (KBAdvPacketEddyTLM)advPacket;
-                            Log.v(LOG_TAG,"TLM battery:" + advTLM.getBatteryLevel());
-                            Log.v(LOG_TAG,"TLM Temperature:" + advTLM.getTemperature());
-                            Log.v(LOG_TAG,"TLM adv count:" + advTLM.getAdvCount());
-                            break;
-                        }
-                    }
-                }
-
-                mBeaconsDictory.put(beacon.getMac(), beacon);
-            }
-
-            if (mBeaconsDictory.size() > 0) {
-                mBeaconsArray = new KBeacon[mBeaconsDictory.size()];
-                mBeaconsDictory.values().toArray(mBeaconsArray);
-                mDevListAdapter.notifyDataSetChanged();
-            }
-        }
-
-        public void onCentralBleStateChang(int nNewState)
-        {
-            if (nNewState == KBeaconsMgr.BLEStatePowerOff)
-            {
-                Log.e(LOG_TAG, "BLE function is power off");
-            }
-            else if (nNewState == KBeaconsMgr.BLEStatePowerOn)
-            {
-                Log.e(LOG_TAG, "BLE function is power on");
-            }
-        }
-
-        public void onScanFailed(int errorCode)
-        {
-            Log.e(LOG_TAG, "Start N scan failed：" + errorCode);
-            if (mScanFailedContinueNum >= MAX_ERROR_SCAN_NUMBER){
-                toastShow("scan encount error, error time:" + mScanFailedContinueNum);
-            }
-            mScanFailedContinueNum++;
-        }
-    };
-```
-
-4. Handle KSensor data from advertisement packet
-```Java
-//get advertisement packet during scanning callback
-public void onBeaconDiscovered(KBeacon[] beacons)
+//example for print all scanned packet
+KBeaconsMgr.KBeaconMgrDelegate beaconMgrExample = new KBeaconsMgr.KBeaconMgrDelegate()
 {
-	KBAdvPacketSensor advSensor = (KBAdvPacketSensor)device.getAdvPacketByType(KBAdvType.Sensor);
-	if (advSensor != null)
-	{
-	   KBAccSensorValue accPos = advSensor.getAccSensor();
-	   if (accPos != null) {
-	      strAccValue = String.format(Locale.ENGLISH, "x:%d; y:%d; z:%d",
-	            accPos.xAis, accPos.yAis, accPos.zAis);
-	   }
-	}
+    //get advertisement packet during scanning callback
+    public void onBeaconDiscovered(KBeacon[] beacons)
+    {
+        for (KBeacon beacon: beacons)
+        {
+            //get beacon adv common info
+            Log.v(LOG_TAG, "beacon mac:" + beacon.getMac());
+            Log.v(LOG_TAG, "beacon name:" + beacon.getName());
+            Log.v(LOG_TAG,"beacon rssi:" + beacon.getRssi());
+
+            //get adv packet
+            for (KBAdvPacketBase advPacket : beacon.allAdvPackets())
+            {
+                switch (advPacket.getAdvType())
+                {
+                    case KBAdvType.IBeacon:
+                    {
+                        KBAdvPacketIBeacon advIBeacon = (KBAdvPacketIBeacon)advPacket;
+                        Log.v(LOG_TAG,"iBeacon uuid:" + advIBeacon.getUuid());
+                        Log.v(LOG_TAG,"iBeacon major:" + advIBeacon.getMajorID());
+                        Log.v(LOG_TAG,"iBeacon minor:" + advIBeacon.getMinorID());
+                        break;
+                    }
+
+                    case KBAdvType.EddyTLM:
+                    {
+                        KBAdvPacketEddyTLM advTLM = (KBAdvPacketEddyTLM)advPacket;
+                        Log.v(LOG_TAG,"TLM battery:" + advTLM.getBatteryLevel());
+                        Log.v(LOG_TAG,"TLM Temperature:" + advTLM.getTemperature());
+                        Log.v(LOG_TAG,"TLM adv count:" + advTLM.getAdvCount());
+                        break;
+                    }
+
+                    case KBAdvType.Sensor:
+                    {
+                        KBAdvPacketSensor advSensor = (KBAdvPacketSensor)advPacket;
+                        Log.v(LOG_TAG,"Sensor battery:" + advSensor.getBatteryLevel());
+                        Log.v(LOG_TAG,"Sensor temp:" + advSensor.getTemperature());
+                        Log.v(LOG_TAG,"Sensor humidity:" + advSensor.getHumidity());
+                        KBAccSensorValue accPos = advSensor.getAccSensor();
+                        if (accPos != null) {
+                            String strAccValue = String.format(Locale.ENGLISH, "x:%d; y:%d; z:%d",
+                                    accPos.xAis, accPos.yAis, accPos.zAis);
+                            Log.v(LOG_TAG,"Sensor Acc:" + strAccValue);
+                        }
+                        break;
+                    }
+
+                    case KBAdvType.EddyUID:
+                    {
+                        KBAdvPacketEddyUID advUID = (KBAdvPacketEddyUID)advPacket;
+                        Log.v(LOG_TAG,"UID Nid:" + advUID.getNid());
+                        Log.v(LOG_TAG,"UID Sid:" + advUID.getSid());
+                        break;
+                    }
+
+                    case KBAdvType.EddyURL:
+                    {
+                        KBAdvPacketEddyURL advURL = (KBAdvPacketEddyURL)advPacket;
+                        Log.v(LOG_TAG,"URL:" + advURL.getUrl());
+                        break;
+                    }
+
+                    case KBAdvType.System:
+                    {
+                        KBAdvPacketSystem advSystem = (KBAdvPacketSystem)advPacket;
+                        Log.v(LOG_TAG,"System mac:" + advSystem.getMacAddress());
+                        Log.v(LOG_TAG,"System model:" + advSystem.getModel());
+                        Log.v(LOG_TAG,"System batt:" + advSystem.getBatteryPercent());
+                        Log.v(LOG_TAG,"System ver:" + advSystem.getVersion());
+                        break;
+                    }
+
+                    default:
+                        break;
+                }
+            }
+
+            //clear all scanned packet
+            beacon.removeAdvPacket();
+        }
+    }
 }
 ```
 
@@ -225,7 +227,20 @@ mBeaconsMgr. stopScanning();
 ### 4.2 Connect to device
  1. If the app wants to change the device parameters, then it need connect to the device.
  ```Java
+ //connect to device with default parameters
 mBeacon.connect(password, max_timeout, connectionDelegate);
+
+//or
+//connect to device with specified parameters
+//When the app is connected to the KBeacon device, the app can specify which the configuration parameters to be read,
+//The parameter that can be read include: common parameters, advertisement parameters, trigger parameters, and sensor parameters
+  KBConnPara connPara = new KBConnPara();
+            connPara.syncUtcTime = true;
+            connPara.readCommPara = true;
+            connPara.readSlotPara = true;
+            connPara.readTriggerPara = false;
+            connPara.readSensorPara = false;
+  mBeacon.connectEnhanced(password, max_timeout, connPara, connectionDelegate);
  ```
 * Password: device password, the default password is 0000000000000000
 * max_timeout: max connection time, unit is milliseconds.
@@ -307,6 +322,8 @@ private KBeacon.ConnStateDelegate connectionDelegate = new KBeacon.ConnStateDele
 //update device's configuration to UI
 public void updateDeviceToView()
 {
+    //if the device had read common parameters and advertisement parameters during connection,
+    //then the app can print the parameters
     KBCfgCommon commonCfg = mBeacon.getCommonCfg();
     KBCfgAdvBase slot0Adv = mBeacon.getSlotCfg(0);
 

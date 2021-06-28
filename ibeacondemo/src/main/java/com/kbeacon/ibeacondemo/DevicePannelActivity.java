@@ -28,6 +28,7 @@ import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTrigger;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerAction;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerType;
+import com.kkmcn.kbeaconlib2.KBConnPara;
 import com.kkmcn.kbeaconlib2.KBConnState;
 import com.kkmcn.kbeaconlib2.KBConnectionEvent;
 import com.kkmcn.kbeaconlib2.KBErrorCode;
@@ -45,6 +46,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     public final static String DEVICE_MAC_ADDRESS = "DEVICE_MAC_ADDRESS";
     private final static String LOG_TAG = "DevicePannel";
     public final static String DEFAULT_PASSWORD = "0000000000000000";   //16 zero ascii
+
+    private final static boolean READ_DEFAULT_PARAMETERS = true;
 
     private KBeaconsMgr mBeaconMgr;
     private String mDeviceAddress;
@@ -862,7 +865,28 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if(id == R.id.menu_connect){
-            mBeacon.connect(mPref.getPassword(mDeviceAddress), 20*1000, this);
+
+            if (DevicePannelActivity.READ_DEFAULT_PARAMETERS)
+            {
+                //connect to device with default parameters
+                mBeacon.connect(mPref.getPassword(mDeviceAddress), 20 * 1000, this);
+            }
+            else
+            {
+                //connect to device with specified parameters
+                //When the app is connected to the KBeacon device, the app can specify which the configuration parameters to be read,
+                //The parameter that can be read include: common parameters, advertisement parameters, trigger parameters, and sensor parameters
+                KBConnPara connPara = new KBConnPara();
+                connPara.syncUtcTime = true;
+                connPara.readCommPara = true;
+                connPara.readSlotPara = true;
+                connPara.readTriggerPara = false;
+                connPara.readSensorPara = false;
+                mBeacon.connectEnhanced(mPref.getPassword(mDeviceAddress), 20 * 1000,
+                        connPara,
+                        this);
+            }
+
             invalidateOptionsMenu();
         }
         else if(id == R.id.menu_disconnect){
