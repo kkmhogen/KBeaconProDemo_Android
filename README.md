@@ -123,7 +123,7 @@ else
 }
 ```
 
-4. Implementation KBeaconMgr delegate to get scanning result 
+4. Implementation KBeaconMgr delegate to get scanning result
 The SDK will cache the last packet of each advertisement type that it scans, and it may cache up to 6 packet (iBeacon, URL, TLM, UID, KSensor, System). the application can call removeAdvPacket() in onBeaconDiscovered to delete the cached packet.
 ```Java
 //example for print all scanned packet
@@ -1022,7 +1022,6 @@ The app can configure KBeacon to start broadcasting after detecting an abnormali
 * HTTempBelow
 * HTHumidityAbove
 * HTHumidityBelow
-* HTRealTimeReport : This trigger will always happened regardless of the measured value of temperature and humidity. It is only used to report realtime humidity and temperature to APP.
 
 1. Enable temperature&humidity trigger feature.  
 
@@ -1081,51 +1080,109 @@ public void enableTHTriggerEvtRpt2Adv() {
 2. Report temperature&humidity to app realtime
 ```Java
 //After enable realtime data to app, then the device will periodically send the temperature and humidity data to app whether it was changed or not.
-    public void enableTHRealtimeTriggerRpt2App(){
-        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+public void enableTHRealtimeTriggerRpt2App(){
+    final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
 
+    if (!mBeacon.isConnected()) {
+        toastShow("Device is not connected");
+        return;
+    }
+
+    //check device capability
+    if (oldCommonCfg != null && !oldCommonCfg.isSupportHumiditySensor())
+    {
+        toastShow("device is not support humidity");
+        return;
+    }
+
+    KBCfgTrigger thTriggerPara = new KBCfgTrigger(0, KBTriggerType.HTHumidityAbove);
+    thTriggerPara.setTriggerPara(0); //condition always true
+    thTriggerPara.setTriggerAction(KBTriggerAction.Report2App);
+
+    //subscribe humidity notify
+    mEnableTHRealtimeTrigger2App.setEnabled(false);
+    this.mBeacon.modifyConfig(thTriggerPara, new KBeacon.ActionCallback() {
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            mEnableTHRealtimeTrigger2App.setEnabled(true);
+            if (bConfigSuccess) {
+                Log.v(LOG_TAG, "set temp&humidity trigger event report to app");
+
+                if (!mBeacon.isSensorDataSubscribe(KBTriggerType.HTHumidityAbove)) {
+                    mBeacon.subscribeSensorDataNotify(KBTriggerType.HTHumidityAbove, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                        @Override
+                        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                            if (bConfigSuccess) {
+                                Log.v(LOG_TAG, "subscribe temperature and humidity data success");
+                            } else {
+                                Log.v(LOG_TAG, "subscribe temperature and humidity data failed");
+                            }
+                        }
+                    });
+                }
+
+            } else {
+                toastShow("enable temp&humidity error:" + error.errorCode);
+            }
+        }
+    });
+}
+```
+
+#### 4.3.4.4 Cutoff Wristband trigger
+The app can configure KBeacon to start broadcasting after detect the wristband was cut off.
+* CutoffWatchband
+
+```Java
+//The following example is that the beacon usually broadcasts the iBeacon message in Slot0.
+    // When it detects the watchband was cutoff, it triggers the broadcast of the iBeacon with UUID + 7, and
+    // the iBeacon broadcast duration is 10 seconds.
+    public void enableCutoffTriggerEvent2Adv() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
             return;
         }
 
         //check device capability
-        if (oldCommonCfg != null && !oldCommonCfg.isSupportHumiditySensor())
+        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportTrigger(KBTriggerType.CutoffWatchband))
         {
-            toastShow("device is not support humidity");
+            toastShow("device is not support cutoff alarm");
             return;
         }
 
-        KBCfgTrigger thTriggerPara = new KBCfgTrigger(0, KBTriggerType.HTRealTimeReport);
-        thTriggerPara.setTriggerAction(KBTriggerAction.Report2App);
+        //set slot0 to default alive advertisement
+        final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
+        iBeaconAdv.setSlotIndex(0);  //reuse previous slot
+        iBeaconAdv.setAdvPeriod(1280f);
+        iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
+        iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
+        iBeaconAdv.setAdvConnectable(true);
+        iBeaconAdv.setAdvTriggerOnly(false);  //always advertisement
+        iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B57FE61");
+        iBeaconAdv.setMajorID(12);
+        iBeaconAdv.setMinorID(10);
 
-        //subscribe humidity notify
-        mEnableTHRealtimeTrigger2App.setEnabled(false);
-        this.mBeacon.modifyConfig(thTriggerPara, new KBeacon.ActionCallback() {
+        //set trigger type
+        KBCfgTrigger cutoffTriggerPara = new KBCfgTrigger(0, KBTriggerType.CutoffWatchband);
+        cutoffTriggerPara.setTriggerAdvChangeMode(1);   //change the UUID when trigger event happened
+        cutoffTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
+        cutoffTriggerPara.setTriggerAdvSlot(0);
+        cutoffTriggerPara.setTriggerAdvTime(20);
+
+        //enable cutoff trigger
+        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+        cfgList.add(iBeaconAdv);
+        cfgList.add(cutoffTriggerPara);
+        this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                mEnableTHRealtimeTrigger2App.setEnabled(true);
                 if (bConfigSuccess) {
-                    Log.v(LOG_TAG, "set temp&humidity trigger event report to app");
-
-                    if (!mBeacon.isSensorDataSubscribe(KBTriggerType.HTRealTimeReport)) {
-                        mBeacon.subscribeSensorDataNotify(KBTriggerType.HTRealTimeReport, DevicePannelActivity.this, new KBeacon.ActionCallback() {
-                            @Override
-                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                                if (bConfigSuccess) {
-                                    Log.v(LOG_TAG, "subscribe temperature and humidity data success");
-                                } else {
-                                    Log.v(LOG_TAG, "subscribe temperature and humidity data failed");
-                                }
-                            }
-                        });
-                    }
-
+                    toastShow("enable cut off trigger success");
                 } else {
-                    toastShow("enable temp&humidity error:" + error.errorCode);
+                    toastShow("enable cut off trigger error:" + error.errorCode);
                 }
             }
         });
-    }  
+    }    
 ```
 
 #### 4.3.5 Setup Temperature&Humidity sensor parameters
@@ -1481,6 +1538,7 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
+*  2021.8.20 V1.51 Add cutoff trigger
 *  2021.6.20 V1.41 Support slot mode advertisement
 *  2021.1.30 V1.31 Support button and motion trigger event in connected state
 * 2020.11.11 v1.30 Support temperature and humidity sensor. Remove AAR library, please download library from JCenter.

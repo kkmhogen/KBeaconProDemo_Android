@@ -397,7 +397,56 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
+    //The following example is that the beacon usually broadcasts the iBeacon message in Slot0.
+    // When it detects the watchband was cutoff, it triggers the broadcast of the iBeacon with UUID + 7, and
+    // the iBeacon broadcast duration is 10 seconds.
+    public void enableCutoffTriggerEvent2Adv() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
 
+        //check device capability
+        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportTrigger(KBTriggerType.CutoffWatchband))
+        {
+            toastShow("device is not support cutoff alarm");
+            return;
+        }
+
+        //set slot0 to default alive advertisement
+        final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
+        iBeaconAdv.setSlotIndex(0);  //reuse previous slot
+        iBeaconAdv.setAdvPeriod(1280f);
+        iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
+        iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
+        iBeaconAdv.setAdvConnectable(true);
+        iBeaconAdv.setAdvTriggerOnly(false);  //always advertisement
+        iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B57FE61");
+        iBeaconAdv.setMajorID(12);
+        iBeaconAdv.setMinorID(10);
+
+        //set trigger type
+        KBCfgTrigger cutoffTriggerPara = new KBCfgTrigger(0, KBTriggerType.CutoffWatchband);
+        cutoffTriggerPara.setTriggerAdvChangeMode(1);   //change the UUID when trigger event happened
+        cutoffTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
+        cutoffTriggerPara.setTriggerAdvSlot(0);
+        cutoffTriggerPara.setTriggerAdvTime(20);
+
+        //enable cutoff trigger
+        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+        cfgList.add(iBeaconAdv);
+        cfgList.add(cutoffTriggerPara);
+        this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess) {
+                    toastShow("enable cut off trigger success");
+                } else {
+                    toastShow("enable cut off trigger error:" + error.errorCode);
+                }
+            }
+        });
+    }
 
     //The following example is that the beacon usually broadcasts the KSensor message in Slot0.
     // When it detects button press, it triggers the broadcast of the iBeacon message in Slot1, and
