@@ -115,28 +115,17 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mViewTHDataHistory = findViewById(R.id.viewTHDataHistory); //view temperature and humidity data history
         mViewTHDataHistory.setOnClickListener(this);
 
-
-
         //TH trigger
         nEnableTHTrigger2Adv = findViewById(R.id.enableTHChangeTriggerEvtRpt2Adv);
         nEnableTHTrigger2Adv.setOnClickListener(this);
         nEnableTHTrigger2App = findViewById(R.id.enableTHChangeTriggerEvtRpt2App);
         nEnableTHTrigger2App.setOnClickListener(this);
 
-
-
-
-
-
         //send temperature humidity data to app
         mEnableTHRealtimeTrigger2App = findViewById(R.id.enableRealtimeTHDataToApp);
         mEnableTHRealtimeTrigger2App.setOnClickListener(this);
         mRingButton = (Button) findViewById(R.id.ringDevice);
         mRingButton.setOnClickListener(this);
-
-
-
-
 
         findViewById(R.id.dfuDevice).setOnClickListener(this);
 
@@ -349,7 +338,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     {
         //check if Temperature and humidity trigger event
         if (nEventType >= KBTriggerType.HTTempAbove
-            && nEventType <= KBTriggerType.HTRealTimeReport)
+            && nEventType <= KBTriggerType.HTHumidityBelow)
         {
             int nDataIndex = 0;
             long nUTCTime = ByteConvert.bytesToLong(sensorData, 0);
@@ -483,16 +472,18 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
 
         //check device capability
+        final int nTriggerType = KBTriggerType.BtnDoubleClick;
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
-        if (oldCommonCfg != null && !oldCommonCfg.isSupportButton())
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportTrigger(nTriggerType))
         {
             toastShow("device is not support humidity");
             return;
         }
 
         //set trigger type
-        KBCfgTrigger btnTriggerPara = new KBCfgTrigger(0, KBTriggerType.BtnSingleClick);
-        btnTriggerPara.setTriggerAction(KBTriggerAction.Report2App | KBTriggerAction.Advertisement);
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger(0,
+                nTriggerType);
+        btnTriggerPara.setTriggerAction(KBTriggerAction.Report2App);
 
         //enable push button trigger
         mTriggerButtonApp.setEnabled(false);
@@ -501,14 +492,14 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 mTriggerButtonApp.setEnabled(true);
                 if (bConfigSuccess) {
                     //subscribe humidity notify
-                    if (!mBeacon.isSensorDataSubscribe(KBTriggerType.BtnSingleClick)) {
-                        mBeacon.subscribeSensorDataNotify(KBTriggerType.BtnSingleClick, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                    if (!mBeacon.isSensorDataSubscribe(nTriggerType)) {
+                        mBeacon.subscribeSensorDataNotify(nTriggerType, DevicePannelActivity.this, new KBeacon.ActionCallback() {
                             @Override
                             public void onActionComplete(boolean bConfigSuccess, KBException error) {
                                 if (bConfigSuccess) {
-                                    Log.v(LOG_TAG, "subscribe button trigger event success");
+                                    toastShow("subscribe button trigger event success");
                                 } else {
-                                    Log.v(LOG_TAG, "subscribe button trigger event failed");
+                                    toastShow("subscribe button trigger event failed");
                                 }
                             }
                         });
@@ -852,7 +843,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             return;
         }
 
-        KBCfgTrigger thTriggerPara = new KBCfgTrigger(0, KBTriggerType.HTRealTimeReport);
+        KBCfgTrigger thTriggerPara = new KBCfgTrigger(0, KBTriggerType.HTHumidityAbove);
+        thTriggerPara.setTriggerPara(0); //condition always true
         thTriggerPara.setTriggerAction(KBTriggerAction.Report2App);
 
         //subscribe humidity notify
@@ -863,8 +855,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 if (bConfigSuccess) {
                     Log.v(LOG_TAG, "set temp&humidity trigger event report to app");
 
-                    if (!mBeacon.isSensorDataSubscribe(KBTriggerType.HTRealTimeReport)) {
-                        mBeacon.subscribeSensorDataNotify(KBTriggerType.HTRealTimeReport, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                    if (!mBeacon.isSensorDataSubscribe(KBTriggerType.HTHumidityAbove)) {
+                        mBeacon.subscribeSensorDataNotify(KBTriggerType.HTHumidityAbove, DevicePannelActivity.this, new KBeacon.ActionCallback() {
                             @Override
                             public void onActionComplete(boolean bConfigSuccess, KBException error) {
                                 if (bConfigSuccess) {

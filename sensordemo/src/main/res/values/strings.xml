@@ -17,7 +17,7 @@
     <string name="Dialog_Cancel">Cancel</string>
     <string name="track_setting">Setting</string>
 
-    <string name="app_name">iBeaconDemo</string>
+    <string name="app_name">sensordemo</string>
     <string name="ble_not_supported">Devices does not support ble4.0 </string>
     <string name="ble_function_disable">Bluetooth function is not enable on phone.</string>
     <string name="label_data">Data:</string>
