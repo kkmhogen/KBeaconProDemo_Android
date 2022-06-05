@@ -206,12 +206,28 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
                             KBAdvPacketSensor advSensor = (KBAdvPacketSensor) advPacket;
                             Log.v(LOG_TAG, "Sensor battery:" + advSensor.getBatteryLevel());
                             Log.v(LOG_TAG, "Sensor temp:" + advSensor.getTemperature());
-                            Log.v(LOG_TAG, "Sensor humidity:" + advSensor.getHumidity());
+
+                            //device that has acc sensor
                             KBAccSensorValue accPos = advSensor.getAccSensor();
                             if (accPos != null) {
                                 String strAccValue = String.format(Locale.ENGLISH, "x:%d; y:%d; z:%d",
                                         accPos.xAis, accPos.yAis, accPos.zAis);
                                 Log.v(LOG_TAG, "Sensor Acc:" + strAccValue);
+                            }
+
+                            //device that has humidity sensor
+                            if (advSensor.getHumidity() != null) {
+                                Log.v(LOG_TAG, "Sensor humidity:" + advSensor.getHumidity());
+                            }
+
+                            //device that has cutoff sensor
+                            if (advSensor.getWatchCutoff() != null) {
+                                Log.v(LOG_TAG, "cutoff flag:" + advSensor.getWatchCutoff());
+                            }
+
+                            //device that has PIR sensor
+                            if (advSensor.getPirIndication() != null) {
+                                Log.v(LOG_TAG, "pir indication:" + advSensor.getPirIndication());
                             }
                             break;
                         }
