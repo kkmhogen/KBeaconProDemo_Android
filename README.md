@@ -14,7 +14,7 @@ With this SDK, you can scan and configure the KBeacon device. The SDK include fo
 
 **Scanning Stage**
 
-in this stage, KBeaconsMgr will scan and parse the advertisement packet about KBeacon devices, and it will create "KBeacon" instance for every founded devices, developers can get all advertisements data by its allAdvPackets or getAdvPacketByType function.
+in this stage, KBeaconsMgr will scan and parse the advertisement packet about KBeacon devices, and it will create "KBeacon" instance for every found devices, developers can get all advertisements data by its allAdvPackets or getAdvPacketByType function.
 
 **Connection Stage**
 
@@ -36,9 +36,12 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.0.7'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.1.4'
 }
 ```
+This library is also open source, please refer to this link.  
+[kbeaconlib](https://github.com/kkmhogen/android_kbeaconlib2)  
+
 
 2. In your root project’s build.gradle file, make sure to include maven repository.
 ```Java
@@ -58,14 +61,11 @@ buildscript {
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+<!--For android 12, the app should declare follow permission-->
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 ```  
-
-For android version > 10, if you want the app scanning KBeacons in background, please add:  
-
-```Java
-<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-
-```
 
 ## 4. How to use SDK
 ### 4.1 Scanning device
@@ -93,14 +93,26 @@ In Android-6.0 or later, Bluetooth scanning requires location permissions, so th
 if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
         != PackageManager.PERMISSION_GRANTED) {
     ActivityCompat.requestPermissions(this,
-            new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_COARSE_LOCATION);
+            new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, xx);
 }
 //for android10, the app need fine location permission for BLE scanning
 if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         != PackageManager.PERMISSION_GRANTED) {
     ActivityCompat.requestPermissions(this,
-            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_FINE_LOCATION);
+            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, xx);
 }
+//for android 12, the app need declare follow permissions
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+{
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_SCAN}, xx);
+    }
+
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, xx);
+    }
+}
+
 ```
 
 3. Start scanning
@@ -297,6 +309,7 @@ For example, advertisement type was set to “iBeacon + TLM + System”, then th
 |Slot No.|0|1|2|3|4|
 |----|----|----|----|----|----|
 |`Adv type`|iBeacon|TLM |System|None|None|
+|`Adv Mode`|Legacy|Coded PHY|2M PHY|Legacy|Legacy|
 |`Adv Interval(ms)`|1022.5|8000.0|8000.0|NA|NA|
 |`Tx power(dBm)`|0|4|-12|NA|NA|
 
@@ -774,7 +787,7 @@ public void enableButtonTrigger() {
     final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
     if (oldCommonCfg != null && !oldCommonCfg.isSupportButton())
     {
-        toastShow("device is not support humidity");
+        toastShow("The device does not support humidity");
         return;
     }
 
@@ -855,13 +868,13 @@ public void enableButtonTriggerEvent2App()
     final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
     if (oldCommonCfg != null && !oldCommonCfg.isSupportButton())
     {
-        toastShow("device is not support humidity");
+        toastShow("The device does not support humidity");
         return;
     }
 
     //set trigger type
     KBCfgTrigger btnTriggerPara = new KBCfgTrigger(0, KBTriggerType.BtnSingleClick);
-    btnTriggerPara.setTriggerAction(KBTriggerAction.Report2App | KBTriggerAction.Advertisement);
+    btnTriggerPara.setTriggerAction(KBTriggerAction.Report2App);
 
     //enable push button trigger
     mTriggerButtonApp.setEnabled(false);
@@ -869,22 +882,17 @@ public void enableButtonTriggerEvent2App()
         public void onActionComplete(boolean bConfigSuccess, KBException error) {
             mTriggerButtonApp.setEnabled(true);
             if (bConfigSuccess) {
-                //subscribe humidity notify
-                if (!mBeacon.isSensorDataSubscribe(KBTriggerType.BtnSingleClick)) {
-                    mBeacon.subscribeSensorDataNotify(KBTriggerType.BtnSingleClick, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                //subscribe all notify
+                mBeacon.subscribeSensorDataNotify(null, DevicePannelActivity.this, new KBeacon.ActionCallback() {
                         @Override
                         public void onActionComplete(boolean bConfigSuccess, KBException error) {
                             if (bConfigSuccess) {
-                                Log.v(LOG_TAG, "subscribe button trigger event success");
+                                toastShow("subscribe button trigger event success");
                             } else {
-                                Log.v(LOG_TAG, "subscribe button trigger event failed");
+                                toastShow("subscribe button trigger event failed");
                             }
                         }
                     });
-                }
-            } else {
-                toastShow("enable push button trigger error:" + error.errorCode);
-            }
         }
     });
 }
@@ -892,26 +900,7 @@ public void enableButtonTriggerEvent2App()
 //handle trigger event notify
 public void onNotifyDataReceived(KBeacon beacon, int nEventType, byte[] sensorData)
 {
-  //check if Temperature and humidity trigger event
-  if (nEventType >= KBTriggerType.HTTempAbove
-      && nEventType <= KBTriggerType.HTRealTimeReport)
-  {
-      int nDataIndex = 0;
-      long nUTCTime = ByteConvert.bytesToLong(sensorData, 0);
-      nDataIndex += 4;
-
-      Float Temperature = KBUtility.signedBytes2Float(sensorData[nDataIndex], sensorData[nDataIndex+1]);
-      nDataIndex += 2;
-
-      Float humidity = KBUtility.signedBytes2Float(sensorData[nDataIndex], sensorData[nDataIndex+1]);
-      nDataIndex += 2;
-
-      Log.v(LOG_TAG, "Receive trigger notify event:" + nEventType + ", temperature:" + Temperature + ", humidity:" + humidity);
-  }
-  else
-  {
-      Log.v(LOG_TAG, "Receive other trigger notify event:" + nEventType);
-  }
+  Log.v(LOG_TAG, "Receive trigger notify event:" + nEventType);
 }
 
 ```
@@ -929,7 +918,7 @@ public void disableButtonTrigger() {
     final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
     if (oldCommonCfg != null && !oldCommonCfg.isSupportButton())
     {
-        toastShow("device is not support humidity");
+        toastShow("The device does not support humidity");
         return;
     }
 
@@ -971,7 +960,7 @@ public void enableMotionTrigger() {
     final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
     if (oldCommonCfg != null && !oldCommonCfg.isSupportAccSensor())
     {
-        toastShow("device is not support humidity");
+        toastShow("The device does not support humidity");
         return;
     }
 
@@ -1036,7 +1025,7 @@ public void enableTHTriggerEvtRpt2Adv() {
     final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
     if (oldCommonCfg != null && !oldCommonCfg.isSupportHumiditySensor())
     {
-        toastShow("device is not support humidity");
+        toastShow("The device does not support humidity");
         return;
     }
 
@@ -1077,10 +1066,10 @@ public void enableTHTriggerEvtRpt2Adv() {
     });
 }
 ```
-2. Report temperature&humidity to app realtime
+2. Report temperature&humidity to app periodically
 ```Java
 //After enable realtime data to app, then the device will periodically send the temperature and humidity data to app whether it was changed or not.
-public void enableTHRealtimeTriggerRpt2App(){
+public void enableTHPeriodicallyTriggerRpt2App(){
     final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
 
     if (!mBeacon.isConnected()) {
@@ -1091,24 +1080,24 @@ public void enableTHRealtimeTriggerRpt2App(){
     //check device capability
     if (oldCommonCfg != null && !oldCommonCfg.isSupportHumiditySensor())
     {
-        toastShow("device is not support humidity");
+        toastShow("The device does not support humidity");
         return;
     }
 
-    KBCfgTrigger thTriggerPara = new KBCfgTrigger(0, KBTriggerType.HTHumidityAbove);
-    thTriggerPara.setTriggerPara(0); //condition always true
+    KBCfgTrigger thTriggerPara = new KBCfgTrigger(0, KBTriggerType.HTHumidityPeriodically);
     thTriggerPara.setTriggerAction(KBTriggerAction.Report2App);
+    thTriggerPara.setTriggerPara(30);//report to app every 30 second
 
     //subscribe humidity notify
-    mEnableTHRealtimeTrigger2App.setEnabled(false);
+    mEnablePeriodicallyTrigger2App.setEnabled(false);
     this.mBeacon.modifyConfig(thTriggerPara, new KBeacon.ActionCallback() {
         public void onActionComplete(boolean bConfigSuccess, KBException error) {
-            mEnableTHRealtimeTrigger2App.setEnabled(true);
+            mEnablePeriodicallyTrigger2App.setEnabled(true);
             if (bConfigSuccess) {
                 Log.v(LOG_TAG, "set temp&humidity trigger event report to app");
 
-                if (!mBeacon.isSensorDataSubscribe(KBTriggerType.HTHumidityAbove)) {
-                    mBeacon.subscribeSensorDataNotify(KBTriggerType.HTHumidityAbove, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                if (!mBeacon.isSensorDataSubscribe(KBTriggerType.HTHumidityPeriodically)) {
+                    mBeacon.subscribeSensorDataNotify(KBTriggerType.HTHumidityPeriodically, DevicePannelActivity.this, new KBeacon.ActionCallback() {
                         @Override
                         public void onActionComplete(boolean bConfigSuccess, KBException error) {
                             if (bConfigSuccess) {
@@ -1128,68 +1117,151 @@ public void enableTHRealtimeTriggerRpt2App(){
 }
 ```
 
-#### 4.3.4.4 Cutoff Wristband trigger
-The app can configure KBeacon to start broadcasting after detect the wristband was cut off.
-* CutoffWatchband
+#### 4.3.4.4 Cutoff trigger
+The Cutoff trigger is suitable for tamper-evident beacon such as W3, W7. Or Door beacon such as the S1.  
+When the cut-off was detected, the beacon will send the specfic advertisement to the cloud/backend and trigger the alert, the administrator will response and help.  
+*Wristband Beacon  
+![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/wristbandCutoffTrigger.png?raw=true)  
+*CutoffWatchband  
+![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/doorCutoffTrigger.png?raw=true)  
 
 ```Java
 //The following example is that the beacon usually broadcasts the iBeacon message in Slot0.
-    // When it detects the watchband was cutoff, it triggers the broadcast of the iBeacon with UUID + 7, and
-    // the iBeacon broadcast duration is 10 seconds.
-    public void enableCutoffTriggerEvent2Adv() {
-        if (!mBeacon.isConnected()) {
-            toastShow("Device is not connected");
-            return;
-        }
+// When it detects the watchband was cutoff, it triggers the broadcast of the iBeacon with UUID + 7, and
+// the iBeacon broadcast duration is 10 seconds.
+public void enableCutoffTriggerEvent2Adv() {
+    if (!mBeacon.isConnected()) {
+        toastShow("Device is not connected");
+        return;
+    }
 
-        //check device capability
-        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
-        if (oldCommonCfg != null && !oldCommonCfg.isSupportTrigger(KBTriggerType.CutoffWatchband))
-        {
-            toastShow("device is not support cutoff alarm");
-            return;
-        }
+    //check device capability
+    final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+    if (oldCommonCfg != null && !oldCommonCfg.isSupportTrigger(KBTriggerType.CutoffWatchband))
+    {
+        toastShow("device does not support cutoff alarm");
+        return;
+    }
 
-        //set slot0 to default alive advertisement
-        final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
-        iBeaconAdv.setSlotIndex(0);  //reuse previous slot
-        iBeaconAdv.setAdvPeriod(1280f);
-        iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
-        iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
-        iBeaconAdv.setAdvConnectable(true);
-        iBeaconAdv.setAdvTriggerOnly(false);  //always advertisement
-        iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B57FE61");
-        iBeaconAdv.setMajorID(12);
-        iBeaconAdv.setMinorID(10);
+    //set slot0 to default alive advertisement
+    final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
+    iBeaconAdv.setSlotIndex(0);  //reuse previous slot
+    iBeaconAdv.setAdvPeriod(1280f);
+    iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
+    iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
+    iBeaconAdv.setAdvConnectable(true);
+    iBeaconAdv.setAdvTriggerOnly(false);  //always advertisement
+    iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B57FE61");
+    iBeaconAdv.setMajorID(12);
+    iBeaconAdv.setMinorID(10);
 
-        //set trigger type
-        KBCfgTrigger cutoffTriggerPara = new KBCfgTrigger(0, KBTriggerType.CutoffWatchband);
-        cutoffTriggerPara.setTriggerAdvChangeMode(1);   //change the UUID when trigger event happened
-        cutoffTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
-        cutoffTriggerPara.setTriggerAdvSlot(0);
-        cutoffTriggerPara.setTriggerAdvTime(20);
+    //set trigger type
+    KBCfgTrigger cutoffTriggerPara = new KBCfgTrigger(0, KBTriggerType.CutoffWatchband);
+    cutoffTriggerPara.setTriggerAdvChangeMode(1);   //change the UUID when trigger event happened
+    cutoffTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
+    cutoffTriggerPara.setTriggerAdvSlot(0);
+    cutoffTriggerPara.setTriggerAdvTime(20);
 
-        //enable cutoff trigger
-        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
-        cfgList.add(iBeaconAdv);
-        cfgList.add(cutoffTriggerPara);
-        this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
-            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                if (bConfigSuccess) {
-                    toastShow("enable cut off trigger success");
-                } else {
-                    toastShow("enable cut off trigger error:" + error.errorCode);
-                }
+    //enable cutoff trigger
+    ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+    cfgList.add(iBeaconAdv);
+    cfgList.add(cutoffTriggerPara);
+    this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess) {
+                toastShow("enable cut off trigger success");
+            } else {
+                toastShow("enable cut off trigger error:" + error.errorCode);
             }
-        });
-    }    
+        }
+    });
+}    
 ```
 
-#### 4.3.5 Setup Temperature&Humidity sensor parameters
-If the device has some sensors, such as temperature and humidity sensors, we may need to set sensor parameters, such as the measurement period. Whether to save measurement records, etc.
+#### 4.3.4.5 PIR trigger
+```Java
+public void enablePIRTrigger() {
+    if (!mBeacon.isConnected()) {
+        toastShow("Device is not connected");
+        return;
+    }
 
+    //check device capability
+    final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+    if (oldCommonCfg != null && !oldCommonCfg.isSupportPIRSensor())
+    {
+        toastShow("device does not support PIR sensor");
+        return;
+    }
 
-#### 4.3.5.1 Config measure and log paramaters
+    //enable PIR trigger
+    KBCfgTrigger pirTriggerPara = new KBCfgTrigger(0, KBTriggerType.PIRBodyInfraredDetected);
+
+    //Save the PIR event to memory flash and report it to the APP at the same time
+    pirTriggerPara.setTriggerAction(KBTriggerAction.Record | KBTriggerAction.Report2App);
+
+    //If the human infrared is repeatedly detected within 30 seconds, it will no longer be record/reported.
+    pirTriggerPara.setTriggerPara(30);
+
+    this.mBeacon.modifyConfig(pirTriggerPara, new KBeacon.ActionCallback() {
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess) {
+                toastShow("enable PIR trigger success");
+            } else {
+                toastShow("enable PIR trigger error:" + error.errorCode);
+            }
+        }
+    });
+}    
+```
+
+#### 4.3.5 Sensor parameters
+If the device has sensors, such as temperature and humidity sensors, we may need to setting the sensor parameters, such as the measurement interval.
+For some sensors, we may not want it to work all the time, such as the Door sensor, we may only want it to work at night. The advantage of this is, the power consumption can be reduced, and the unnecessary trigger can also be reduced.
+
+#### 4.3.5.1 Config disable period paramaters
+The sensors that support configuring a disable period include: Door sensor, PIR sensor.
+```Java
+//set disable period parameters
+public void setPIRDisablePeriod() {
+   if (!mBeacon.isConnected()) {
+       toastShow("Device is not connected");
+       return;
+   }
+
+   //check device capability
+   final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+   if (oldCommonCfg != null && !oldCommonCfg.isSupportPIRSensor())
+   {
+       toastShow("device does not support PIR sensor");
+       return;
+   }
+
+   KBCfgSensorBase sensorPara = new KBCfgSensorBase();
+   sensorPara.setSensorType(KBSensorType.PIR);
+
+   //set disable period from 8:00AM to 20:00 PM
+   KBTimeRange disablePeriod = new KBTimeRange();
+   disablePeriod.localStartHour = 8;
+   disablePeriod.localStartMinute = 0;
+   disablePeriod.localEndHour = 20;
+   disablePeriod.localEndMinute = 0;
+   sensorPara.setDisablePeriod0(disablePeriod);
+
+   this.mBeacon.modifyConfig(sensorPara, new KBeacon.ActionCallback() {
+       public void onActionComplete(boolean bConfigSuccess, KBException error) {
+           if (bConfigSuccess) {
+               toastShow("Modify para success");
+           } else {
+               toastShow("Modify para error:" + error.errorCode);
+           }
+       }
+   });
+}
+```
+
+#### 4.3.5.2 Config temperature and humidity measure parameters and log paramaters
+For temperature and humidity sensors, we can set the measurement interval. In addition, we can use the device as a Logger, and we can set the log conditions.
 ```Java
 public void setTHSensorMeasureParameters()
 {
@@ -1215,10 +1287,10 @@ public void setTHSensorMeasureParameters()
     //unit is second, set measure temperature and humidity interval
     sensorHTPara.setSensorHtMeasureInterval(2);
 
-    //unit is 0.1%, if abs(current humidity - last saved humidity) > 3, then save new record
+    //unit is 0.1%, if abs(current humidity - last saved humidity) > 3, then log new record
     sensorHTPara.setHumidityChangeThreshold(30);
 
-    //unit is 0.1 Celsius, if abs(current temperature - last saved temperature) > 0.5, then save new record
+    //unit is 0.1 Celsius, if abs(current temperature - last saved temperature) > 0.5, then log new record
     sensorHTPara.setTemperatureChangeThreshold(5);
 
     //enable sensor advertisement
@@ -1238,10 +1310,13 @@ public void setTHSensorMeasureParameters()
 }
 ```
 
-
 #### 4.3.5.3 Read sensor history records
-1. read history summary information.
-```Java
+For some beacon devices, it can logging the trigger events to memory flash. Such as Door open and close events, PIR detection events, temperature and humidity recording. For these devices, we can read these saved histories record through the APP or Gateway.
+
+1. Read history summary information.  
+With this command, we can read the total number of records and the number of unread records in the device. Next, we can read the specified record. Or read the records that have not been read.  
+```Java  
+//read temperature and humidity history record info
 KBHumidityDataMsg mSensorDataMsg = new KBHumidityDataMsg();
 mSensorDataMsg.readSensorDataInfo(mBeacon,
         new KBSensorDataMsgBase.ReadSensorCallback()
@@ -1251,7 +1326,7 @@ mSensorDataMsg.readSensorDataInfo(mBeacon,
             {
 
                 if (bConfigSuccess){
-                  ReadHTSensorInfoRsp infRsp = (ReadHTSensorInfoRsp) obj;
+                  KBSensorDataMsgBase.ReadSensorInfoRsp infRsp = (KBSensorDataMsgBase.ReadSensorInfoRsp) obj;
                   mUtcOffset = UTCTime.getUTCTimeSeconds() - infRsp.readInfoUtcSeconds;
                   Log.v(LOG_TAG, "Total records in device:" + infRsp.totalRecordNumber);
                   Log.v(LOG_TAG, "Un read records in device:" + infRsp.unreadRecordNumber);
@@ -1259,45 +1334,118 @@ mSensorDataMsg.readSensorDataInfo(mBeacon,
             }
         }
     );
+//read cutoff history info example
+public void readCutoffHistoryInfoExample()
+{
+    KBCutoffDataMsg cutOffMsg = new KBCutoffDataMsg();
+    cutOffMsg.readSensorDataInfo(mBeacon, new KBSensorDataMsgBase.ReadSensorCallback() {
+        @Override
+        public void onReadComplete(boolean b, Object o, KBException e) {
+            if (b){
+                KBSensorDataMsgBase.ReadSensorInfoRsp infRsp = (KBSensorDataMsgBase.ReadSensorInfoRsp) o;
+                Log.v(LOG_TAG, "Total records:" + infRsp.totalRecordNumber);
+                Log.v(LOG_TAG, "Unread records:" + infRsp.unreadRecordNumber);
+            }
+        }
+    });
+}    
 ```
 
-2.  Read log history records  
+2.  Read sensor history records  
   The SDK provides the following three ways to read records.
   * KBSensorReadOption.NewRecord:  read history records and move next. After app reading records, the KBeacon device will move the pointer to the next unreaded record. If the app send read request again, the KBeacon device sends next unread records and move the pointer to next.
 
   * KBSensorReadOption.NormalOrder: Read records without pointer moving. The app can read records from old to recently. To read records in this way, the app must  specify the record no to be read.
 
-  * KBSensorReadOption.ReverseOrder: Read records without pointer moving. The app can read records from recently to old. To read records in this way, the app must  specify the record no to be read.
+  * KBSensorReadOption.ReverseOrder: Read records without pointer moving. The app can read records from recently to old. To read records in this way, the app must specify the record no to be read.  
 
-   Example1: The app read the temperature and humidity records. Each time the records was read, the pointer will move to next.
+Example1: The app read un-read history records in KBeacon device. Each time the records was read, the unread pointer in the KBeacon will move to next.
 ```Java
-    mSensorDataMsg.readSensorRecord(mBeacon,
+//Read temperature and humidity history record.
+public void readTempHistoryRecordExample()
+{
+    KBHumidityDataMsg htDataMsg = new KBHumidityDataMsg();
+    htDataMsg.readSensorRecord(mBeacon,
         INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
         KBSensorReadOption.NewRecord,  //read direction type
-        50,   //number of records the app want to read
+        100,   //max number of records the app want to read
         new KBSensorDataMsgBase.ReadSensorCallback()
         {
             @Override
             public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
                 if (bConfigSuccess)
                 {
-                  ReadHTSensorDataRsp dataRsp = (ReadHTSensorDataRsp) obj;
-                  for (KBHumidityRecord record: dataRsp.readDataRspList)
-                  {
-                      Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
-                      Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
-                      Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
-                  }
-
-                  if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
-                  {
-                      Log.v(LOG_TAG, "Read data complete");
-                  }
-              }
-
+                    KBHumidityDataMsg.ReadHTSensorDataRsp dataRsp = (KBHumidityDataMsg.ReadHTSensorDataRsp) obj;
+                    for (KBHumidityRecord record: dataRsp.readDataRspList)
+                    {
+                        Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                        Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
+                        Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
+                    }
+                    if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                    {
+                        Log.v(LOG_TAG, "Read data complete");
+                    }
+                }
             }
-        }
-);
+        });
+}
+//read door cutoff history records
+public void readCutoffHistoryRecordExample()
+{
+    KBCutoffDataMsg cutoffDataMsg = new KBCutoffDataMsg();
+    cutoffDataMsg.readSensorRecord(mBeacon,
+            INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+            KBSensorReadOption.NewRecord,  //read direction type
+            100,   //number of records the app want to read
+            new KBSensorDataMsgBase.ReadSensorCallback()
+            {
+                @Override
+                public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+                    if (bConfigSuccess)
+                    {
+                        KBCutoffDataMsg.ReadDoorSensorDataRsp dataRsp = (KBCutoffDataMsg.ReadDoorSensorDataRsp) obj;
+                        for (KBCutoffRecord record: dataRsp.readDataRspList)
+                        {
+                            Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                            Log.v(LOG_TAG, "record cut off Flag:" + record.mCutoffFlag);
+                        }
+                        if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                        {
+                            Log.v(LOG_TAG, "Read data complete");
+                        }
+                    }
+                }
+            });
+}
+//read door PIR detection history records
+public void readPIRHistoryRecordExample()
+{
+    KBPIRDataMsg pirDataMsg = new KBPIRDataMsg();
+    pirDataMsg.readSensorRecord(mBeacon,
+            INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+            KBSensorReadOption.NewRecord,  //read direction type
+            100,   //number of records the app want to read
+            new KBSensorDataMsgBase.ReadSensorCallback()
+            {
+                @Override
+                public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+                    if (bConfigSuccess)
+                    {
+                        KBPIRDataMsg.ReadPIRSensorDataRsp dataRsp = (KBPIRDataMsg.ReadPIRSensorDataRsp) obj;
+                        for (KBPIRRecord record: dataRsp.readDataRspList)
+                        {
+                            Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                            Log.v(LOG_TAG, "record pir indication:" + record.mPirIndication);
+                        }
+                        if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                        {
+                            Log.v(LOG_TAG, "Read data complete");
+                        }
+                    }
+                }
+            });
+}
 ```  
 
   Example2: The app read the temperature and humidity records without moving pointer.
@@ -1538,6 +1686,7 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
+*  2022.6.5 V1.6 Add PIR trigger
 *  2021.8.20 V1.51 Add cutoff trigger
 *  2021.6.20 V1.41 Support slot mode advertisement
 *  2021.1.30 V1.31 Support button and motion trigger event in connected state

@@ -1,4 +1,4 @@
-package com.kkmcn.sensordemo.dfulibrary;
+package com.kkmcn.dfulibrary;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;

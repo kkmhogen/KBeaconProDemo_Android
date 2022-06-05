@@ -25,7 +25,7 @@
     <string name="label_state">State:</string>
     <string name="no_data">No data</string>
     <string name="connected">Connected</string>
-    <string name="connecting">Connecteing</string>
+    <string name="connecting">Connecting</string>
     <string name="disconnected">Disconnect</string>
     <string name="unknown">Unknown</string>
     <string name="title_devices">Test</string>
@@ -167,7 +167,9 @@
     <string name="BEACON_MINOR_LIST">Minor:</string>
     <string name="KBEACON_ADV_NO_CONNECTABLE">The device is in Un-Connected advertisement and not allowed to be connect. Click the button on KBeacon or reinstall the battery to make it enter connectable advertisement.</string>
     <string name="location_permit_needed_for_ble">The bluetooth need location permission during scan</string>
-    <string name="location_permit_for_ble_failed">Location permission not allowed, start ble scan failed.</string>
+    <string name="location_permit_for_ble_failed">Check location permission failed, start ble scan failed.</string>
+    <string name="connecting_permit_for_ble_failed">Check BLE connecting permission failed.</string>
+
     <string name="SCAN_FAILED_REBOOT">Start scan failed, please reboot Bluetooth and try it again.</string>
     <string name="list_select_type">select</string>
     <string name="ele_value_name">value</string>
@@ -255,7 +257,7 @@
 
     <string name="enable_th_trigger_adv">TriggerEvt 2 Adv</string>
     <string name="enable_th_change_report">TriggerEvt 2 App</string>
-    <string name="enable_th_realtime_report">RealtimeEvt 2 App</string>
+    <string name="enable_th_periodically_report">Periodically 2 App</string>
 
     <string name="DEVICE_DFU_TITLE">Firmware Update</string>
     <string name="DEVICE_DFU_STATUS">Status</string>

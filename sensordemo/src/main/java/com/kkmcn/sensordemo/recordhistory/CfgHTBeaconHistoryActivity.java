@@ -192,7 +192,7 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
                             return;
                         }
 
-                        KBHumidityDataMsg.ReadHTSensorInfoRsp infRsp = (KBHumidityDataMsg.ReadHTSensorInfoRsp) obj;
+                        KBSensorDataMsgBase.ReadSensorInfoRsp infRsp = (KBSensorDataMsgBase.ReadSensorInfoRsp) obj;
                         mUtcOffset = UTCTime.getUTCTimeSeconds() - infRsp.readInfoUtcSeconds;
 
                         Log.v(LOG_TAG, "Total records in device:" + infRsp.totalRecordNumber);
@@ -224,7 +224,7 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
         mSensorDataMsg.readSensorRecord(mBeacon,
                 INVALID_DATA_RECORD_POS,
                 KBSensorReadOption.NewRecord,
-                30,
+                100,
                 new KBSensorDataMsgBase.ReadSensorCallback()
                 {
                     @Override

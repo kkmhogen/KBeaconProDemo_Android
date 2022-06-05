@@ -1,7 +1,10 @@
 package com.kkmcn.sensordemo;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -13,17 +16,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.kkmcn.kbeaconlib2.ByteConvert;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvType;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBAdvMode;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBAdvTxPower;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvIBeacon;
-import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgHandler;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorHT;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTrigger;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBSensorType;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTimeRange;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerAction;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerAdvChgMode;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerType;
 import com.kkmcn.kbeaconlib2.KBConnState;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBCutoffDataMsg;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBCutoffRecord;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityDataMsg;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityRecord;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBPIRDataMsg;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBPIRRecord;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorDataMsgBase;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadOption;
 import com.kkmcn.kbeaconlib2.KBUtility;
 import com.kkmcn.kbeaconlib2.UTCTime;
 import com.kkmcn.sensordemo.dfulibrary.KBeaconDFUActivity;
@@ -42,20 +56,25 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class DevicePannelActivity extends AppBaseActivity implements View.OnClickListener, KBeacon.ConnStateDelegate, KBeacon.NotifyDataDelegate{
+import androidx.core.app.ActivityCompat;
+
+import static com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorDataMsgBase.INVALID_DATA_RECORD_POS;
+
+public class DevicePannelActivity extends AppBaseActivity implements View.OnClickListener,
+        KBeacon.ConnStateDelegate, KBeacon.NotifyDataDelegate{
 
     public final static String DEVICE_MAC_ADDRESS = "DEVICE_MAC_ADDRESS";
     private final static String LOG_TAG = "DevicePannel";
 
     public final static String DEFAULT_PASSWORD = "0000000000000000";   //16 zero ascii
     private static SimpleDateFormat mUtcTimeFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");// 日志文件格式
-
+    private static final int PERMISSION_CONNECT = 25;
     private KBeaconsMgr mBeaconMgr;
     private String mDeviceAddress;
     private KBeacon mBeacon;
 
     //uiview
-    private TextView mBeaconType, mBeaconStatus;
+    private TextView mAdvType, mBeaconStatus;
     private TextView mBeaconModel;
 
     //button trigger
@@ -68,7 +87,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     private Button nEnableTHData2Adv, nEnableAxisData2Adv, mViewTHDataHistory;
 
     //TH trigger
-    private Button nEnableTHTrigger2Adv, nEnableTHTrigger2App, mEnableTHRealtimeTrigger2App;
+    private Button nEnableTHTrigger2Adv, nEnableTHTrigger2App, mEnablePeriodicallyTrigger2App;
 
     private Button mRingButton;
     private String mNewPassword;
@@ -90,7 +109,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mPref = SharePreferenceMgr.shareInstance(this);
         setContentView(R.layout.device_pannel);
         mBeaconStatus = (TextView)findViewById(R.id.connection_states);
-        mBeaconType = (TextView) findViewById(R.id.beaconType);
+        mAdvType = (TextView) findViewById(R.id.beaconAdvType);
         mBeaconModel = (TextView) findViewById(R.id.beaconModle);
 
         //button trigger
@@ -122,8 +141,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         nEnableTHTrigger2App.setOnClickListener(this);
 
         //send temperature humidity data to app
-        mEnableTHRealtimeTrigger2App = findViewById(R.id.enableRealtimeTHDataToApp);
-        mEnableTHRealtimeTrigger2App.setOnClickListener(this);
+        mEnablePeriodicallyTrigger2App = findViewById(R.id.enablePeriodicallyTHDataToApp);
+        mEnablePeriodicallyTrigger2App.setOnClickListener(this);
         mRingButton = (Button) findViewById(R.id.ringDevice);
         mRingButton.setOnClickListener(this);
 
@@ -215,8 +234,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 enableTHTriggerEvtRpt2App();
                 break;
 
-            case R.id.enableRealtimeTHDataToApp:
-                enableTHRealtimeTriggerRpt2App();
+            case R.id.enablePeriodicallyTHDataToApp:
+                enableTHPeriodicallyTriggerRpt2App();
                 break;
 
             //DFU service
@@ -244,6 +263,18 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         {
             Log.v(LOG_TAG, "device has connected");
             invalidateOptionsMenu();
+
+            KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+            if (cfgCommon != null) {
+                this.mBeaconModel.setText(cfgCommon.getModel());
+                ArrayList<KBCfgAdvBase> slotCfg = mBeacon.getSlotCfgList();
+                String strAdvType = "";
+                for (KBCfgAdvBase adv : slotCfg)
+                {
+                    strAdvType = strAdvType + "|" + KBAdvType.getAdvTypeString(adv.getAdvType());
+                }
+                mAdvType.setText(strAdvType);
+            }
 
             nDeviceConnState = state;
         }
@@ -312,14 +343,48 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         */
     }
 
+    public boolean checkPermission()
+    {
+        boolean bHasPermission = true;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT},
+                        PERMISSION_CONNECT);
+                bHasPermission = false;
+            }
+        }
+        return bHasPermission;
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSION_CONNECT) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                mBeacon.connect(mPref.getPassword(mDeviceAddress),
+                        20 * 1000,
+                        this);
+            } else {
+                toastShow("The app need ble connection permission for start ble scanning");
+            }
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if(id == R.id.menu_connect){
             //connect and sync the UTC time to device
-            mBeacon.connect(mPref.getPassword(mDeviceAddress),
-                    20*1000,
-                    this);
+            if (checkPermission())
+            {
+                mBeacon.connect(mPref.getPassword(mDeviceAddress),
+                        20 * 1000,
+                        this);
+            }
             invalidateOptionsMenu();
         }
         else if(id == R.id.menu_disconnect){
@@ -408,9 +473,9 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         //check device capability
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
-        if (oldCommonCfg != null && !oldCommonCfg.isSupportTrigger(KBTriggerType.CutoffWatchband))
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportTrigger(KBTriggerType.Cutoff))
         {
-            toastShow("device is not support cutoff alarm");
+            toastShow("device does not support cutoff alarm");
             return;
         }
 
@@ -427,7 +492,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         iBeaconAdv.setMinorID(10);
 
         //set trigger type
-        KBCfgTrigger cutoffTriggerPara = new KBCfgTrigger(0, KBTriggerType.CutoffWatchband);
+        KBCfgTrigger cutoffTriggerPara = new KBCfgTrigger(0, KBTriggerType.Cutoff);
         cutoffTriggerPara.setTriggerAdvChangeMode(1);   //change the UUID when trigger event happened
         cutoffTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
         cutoffTriggerPara.setTriggerAdvSlot(0);
@@ -461,7 +526,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportButton())
         {
-            toastShow("device is not support humidity");
+            toastShow("device does not support humidity");
             return;
         }
 
@@ -521,11 +586,11 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
 
         //check device capability
-        final int nTriggerType = KBTriggerType.BtnDoubleClick;
+        final int nTriggerType = KBTriggerType.BtnSingleClick;
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportTrigger(nTriggerType))
         {
-            toastShow("device is not support humidity");
+            toastShow("Th device does not support humidity");
             return;
         }
 
@@ -540,21 +605,17 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
                 mTriggerButtonApp.setEnabled(true);
                 if (bConfigSuccess) {
-                    //subscribe humidity notify
-                    if (!mBeacon.isSensorDataSubscribe(nTriggerType)) {
-                        mBeacon.subscribeSensorDataNotify(nTriggerType, DevicePannelActivity.this, new KBeacon.ActionCallback() {
-                            @Override
-                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                                if (bConfigSuccess) {
-                                    toastShow("subscribe button trigger event success");
-                                } else {
-                                    toastShow("subscribe button trigger event failed");
-                                }
+                    //subscribe all notify
+                    mBeacon.subscribeSensorDataNotify(null, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                        @Override
+                        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                            if (bConfigSuccess) {
+                                toastShow("subscribe button trigger event success");
+                            } else {
+                                toastShow("subscribe button trigger event failed");
                             }
-                        });
-                    }
-                } else {
-                    toastShow("enable push button trigger error:" + error.errorCode);
+                        }
+                    });
                 }
             }
         });
@@ -570,7 +631,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportButton())
         {
-            toastShow("device is not support humidity");
+            toastShow("The device does not support humidity");
             return;
         }
 
@@ -601,7 +662,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportAccSensor())
         {
-            toastShow("device is not support humidity");
+            toastShow("The device does not support humidity");
             return;
         }
 
@@ -652,7 +713,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportAccSensor())
         {
-            toastShow("device is not support humidity");
+            toastShow("The device does not support humidity");
             return;
         }
 
@@ -689,7 +750,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         if (oldCommonCfg != null && !oldCommonCfg.isSupportHumiditySensor())
         {
-            toastShow("device is not support humidity");
+            toastShow("The device does not support humidity");
             return;
         }
 
@@ -733,7 +794,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         KBCfgCommon oldCommonCfg = mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportAccSensor())
         {
-            toastShow("Device does not supported acc sensor");
+            toastShow("The device does not supported acc sensor");
             return;
         }
 
@@ -786,7 +847,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportHumiditySensor())
         {
-            toastShow("device is not support humidity");
+            toastShow("The device does not support humidity");
             return;
         }
 
@@ -840,7 +901,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportHumiditySensor())
         {
-            toastShow("device is not support humidity");
+            toastShow("device does not support humidity");
             return;
         }
 
@@ -877,7 +938,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     }
 
     //After enable realtime data to app, then the device will periodically send the temperature and humidity data to app whether it was changed or not.
-    public void enableTHRealtimeTriggerRpt2App(){
+    public void enableTHPeriodicallyTriggerRpt2App(){
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
 
         if (!mBeacon.isConnected()) {
@@ -888,24 +949,24 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         //check device capability
         if (oldCommonCfg != null && !oldCommonCfg.isSupportHumiditySensor())
         {
-            toastShow("device is not support humidity");
+            toastShow("device does not support humidity");
             return;
         }
 
-        KBCfgTrigger thTriggerPara = new KBCfgTrigger(0, KBTriggerType.HTHumidityAbove);
-        thTriggerPara.setTriggerPara(0); //condition always true
+        KBCfgTrigger thTriggerPara = new KBCfgTrigger(0, KBTriggerType.HTHumidityPeriodically);
         thTriggerPara.setTriggerAction(KBTriggerAction.Report2App);
+        thTriggerPara.setTriggerPara(30);//report to app every 30 second
 
         //subscribe humidity notify
-        mEnableTHRealtimeTrigger2App.setEnabled(false);
+        mEnablePeriodicallyTrigger2App.setEnabled(false);
         this.mBeacon.modifyConfig(thTriggerPara, new KBeacon.ActionCallback() {
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                mEnableTHRealtimeTrigger2App.setEnabled(true);
+                mEnablePeriodicallyTrigger2App.setEnabled(true);
                 if (bConfigSuccess) {
                     Log.v(LOG_TAG, "set temp&humidity trigger event report to app");
 
-                    if (!mBeacon.isSensorDataSubscribe(KBTriggerType.HTHumidityAbove)) {
-                        mBeacon.subscribeSensorDataNotify(KBTriggerType.HTHumidityAbove, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                    if (!mBeacon.isSensorDataSubscribe(KBTriggerType.HTHumidityPeriodically)) {
+                        mBeacon.subscribeSensorDataNotify(KBTriggerType.HTHumidityPeriodically, DevicePannelActivity.this, new KBeacon.ActionCallback() {
                             @Override
                             public void onActionComplete(boolean bConfigSuccess, KBException error) {
                                 if (bConfigSuccess) {
@@ -919,6 +980,77 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
                 } else {
                     toastShow("enable temp&humidity error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    // When the beacon detects PIR event, the device will record the event
+    public void enablePIRTrigger() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportPIRSensor())
+        {
+            toastShow("device does not support PIR sensor");
+            return;
+        }
+
+        //enable PIR trigger
+        KBCfgTrigger pirTriggerPara = new KBCfgTrigger(0, KBTriggerType.PIRBodyInfraredDetected);
+
+        //Save the PIR event to memory flash and report it to the APP at the same time
+        pirTriggerPara.setTriggerAction(KBTriggerAction.Record | KBTriggerAction.Report2App);
+
+        //If the human infrared is repeatedly detected within 30 seconds, it will no longer be record/reported.
+        pirTriggerPara.setTriggerPara(30);
+
+        this.mBeacon.modifyConfig(pirTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess) {
+                    toastShow("enable PIR trigger success");
+                } else {
+                    toastShow("enable PIR trigger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //set disable period parameters
+    public void setPIRDisablePeriod() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportPIRSensor())
+        {
+            toastShow("device does not support PIR sensor");
+            return;
+        }
+
+        //enable PIR trigger
+        KBCfgSensorBase sensorPara = new KBCfgSensorBase();
+        sensorPara.setSensorType(KBSensorType.PIR);
+        KBTimeRange disablePeriod = new KBTimeRange();
+        disablePeriod.localStartHour = 8;
+        disablePeriod.localStartMinute = 0;
+        disablePeriod.localEndHour = 20;
+        disablePeriod.localEndMinute = 0;
+        sensorPara.setDisablePeriod0(disablePeriod);
+
+        this.mBeacon.modifyConfig(sensorPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess) {
+                    toastShow("Modify para success");
+                } else {
+                    toastShow("Modify para error:" + error.errorCode);
                 }
             }
         });
@@ -1008,5 +1140,107 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 }
             }
         });
+    }
+
+    public void readCutoffHistoryInfoExample()
+    {
+        KBCutoffDataMsg cutOffMsg = new KBCutoffDataMsg();
+        cutOffMsg.readSensorDataInfo(mBeacon, new KBSensorDataMsgBase.ReadSensorCallback() {
+            @Override
+            public void onReadComplete(boolean b, Object o, KBException e) {
+                if (b){
+                    KBSensorDataMsgBase.ReadSensorInfoRsp infRsp = (KBSensorDataMsgBase.ReadSensorInfoRsp) o;
+                    Log.v(LOG_TAG, "Total records:" + infRsp.totalRecordNumber);
+                    Log.v(LOG_TAG, "Unread records:" + infRsp.unreadRecordNumber);
+                }
+            }
+        });
+    }
+
+    public void readTempHistoryRecordExample()
+    {
+        KBHumidityDataMsg htDataMsg = new KBHumidityDataMsg();
+        htDataMsg.readSensorRecord(mBeacon,
+            INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+            KBSensorReadOption.NewRecord,  //read direction type
+            100,   //number of records the app want to read
+            new KBSensorDataMsgBase.ReadSensorCallback()
+            {
+                @Override
+                public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+                    if (bConfigSuccess)
+                    {
+                        KBHumidityDataMsg.ReadHTSensorDataRsp dataRsp = (KBHumidityDataMsg.ReadHTSensorDataRsp) obj;
+                        for (KBHumidityRecord record: dataRsp.readDataRspList)
+                        {
+                            Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                            Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
+                            Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
+                        }
+                        if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                        {
+                            Log.v(LOG_TAG, "Read data complete");
+                        }
+                    }
+                }
+            });
+    }
+
+    //read door cutoff history records
+    public void readCutoffHistoryRecordExample()
+    {
+        KBCutoffDataMsg cutoffDataMsg = new KBCutoffDataMsg();
+        cutoffDataMsg.readSensorRecord(mBeacon,
+                INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+                KBSensorReadOption.NewRecord,  //read direction type
+                100,   //number of records the app want to read
+                new KBSensorDataMsgBase.ReadSensorCallback()
+                {
+                    @Override
+                    public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+                        if (bConfigSuccess)
+                        {
+                            KBCutoffDataMsg.ReadDoorSensorDataRsp dataRsp = (KBCutoffDataMsg.ReadDoorSensorDataRsp) obj;
+                            for (KBCutoffRecord record: dataRsp.readDataRspList)
+                            {
+                                Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                                Log.v(LOG_TAG, "record cut off Flag:" + record.mCutoffFlag);
+                            }
+                            if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                            {
+                                Log.v(LOG_TAG, "Read data complete");
+                            }
+                        }
+                    }
+                });
+    }
+
+    //read door PIR detection history records
+    public void readPIRHistoryRecordExample()
+    {
+        KBPIRDataMsg pirDataMsg = new KBPIRDataMsg();
+        pirDataMsg.readSensorRecord(mBeacon,
+                INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+                KBSensorReadOption.NewRecord,  //read direction type
+                100,   //number of records the app want to read
+                new KBSensorDataMsgBase.ReadSensorCallback()
+                {
+                    @Override
+                    public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+                        if (bConfigSuccess)
+                        {
+                            KBPIRDataMsg.ReadPIRSensorDataRsp dataRsp = (KBPIRDataMsg.ReadPIRSensorDataRsp) obj;
+                            for (KBPIRRecord record: dataRsp.readDataRspList)
+                            {
+                                Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                                Log.v(LOG_TAG, "record pir indication:" + record.mPirIndication);
+                            }
+                            if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                            {
+                                Log.v(LOG_TAG, "Read data complete");
+                            }
+                        }
+                    }
+                });
     }
 }

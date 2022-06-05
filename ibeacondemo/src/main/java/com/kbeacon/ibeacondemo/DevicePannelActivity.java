@@ -1,7 +1,10 @@
 package com.kbeacon.ibeacondemo;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -41,6 +44,8 @@ import com.kbeacon.ibeacondemo.R;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import androidx.core.app.ActivityCompat;
+
 public class DevicePannelActivity extends AppBaseActivity implements View.OnClickListener, KBeacon.ConnStateDelegate{
 
     public final static String DEVICE_MAC_ADDRESS = "DEVICE_MAC_ADDRESS";
@@ -48,6 +53,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     public final static String DEFAULT_PASSWORD = "0000000000000000";   //16 zero ascii
 
     private final static boolean READ_DEFAULT_PARAMETERS = true;
+
+    private final static int PERMISSION_CONNECT = 20;
 
     private KBeaconsMgr mBeaconMgr;
     private String mDeviceAddress;
@@ -861,6 +868,38 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
     }
 
+
+    public boolean check2RequestPermission()
+    {
+        boolean bHasPermission = true;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT},
+                        PERMISSION_CONNECT);
+                bHasPermission = false;
+            }
+        }
+        return bHasPermission;
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSION_CONNECT) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                mBeacon.connect(mPref.getPassword(mDeviceAddress),
+                        20 * 1000,
+                        this);
+            } else {
+                toastShow("The app need ble connection permission for start ble scanning");
+            }
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -869,7 +908,9 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             if (DevicePannelActivity.READ_DEFAULT_PARAMETERS)
             {
                 //connect to device with default parameters
-                mBeacon.connect(mPref.getPassword(mDeviceAddress), 20 * 1000, this);
+                if (check2RequestPermission()) {
+                    mBeacon.connect(mPref.getPassword(mDeviceAddress), 20 * 1000, this);
+                }
             }
             else
             {

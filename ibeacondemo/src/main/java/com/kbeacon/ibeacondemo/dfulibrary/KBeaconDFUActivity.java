@@ -206,32 +206,47 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
 
 
     private void updateFirmware() {
-        firmwareDownload.downLoadFile(mDestFirmwareFileName,
-                50 * 1000,
-                new KBFirmwareDownload.DownloadFirmwareDataCallback() {
-                    @Override
-                    public void onDownloadComplete(boolean bSuccess, File file, KBException error) {
-                        if (bSuccess) {
-                            mInDfuState = true;
 
-                            starter = new DfuServiceInitiator(KBeaconDFUActivity.this.mBeacon.getMac())
-                                    .setDeviceName(KBeaconDFUActivity.this.mBeacon.getName())
-                                    .setKeepBond(false);
+        if (firmwareDownload.isFirmwareFileExist(mDestFirmwareFileName))
+        {
+            mInDfuState = true;
+            starter = new DfuServiceInitiator(KBeaconDFUActivity.this.mBeacon.getMac())
+                    .setDeviceName(KBeaconDFUActivity.this.mBeacon.getName())
+                    .setKeepBond(false);
+            starter.setPrepareDataObjectDelay(300L);
+            File firmwareFile = firmwareDownload.getFirmwareFile(mDestFirmwareFileName);
+            starter.setZip(null, firmwareFile.getPath());
+            controller = starter.start(KBeaconDFUActivity.this, DFUService.class);
+        }
+        else
+        {
+            firmwareDownload.downLoadFile(mDestFirmwareFileName,
+                    50 * 1000,
+                    new KBFirmwareDownload.DownloadFirmwareDataCallback() {
+                        @Override
+                        public void onDownloadComplete(boolean bSuccess, File file, KBException error) {
+                            if (bSuccess) {
+                                mInDfuState = true;
 
-                            starter.setPrepareDataObjectDelay(300L);
-                            starter.setZip(null, file.getPath());
+                                starter = new DfuServiceInitiator(KBeaconDFUActivity.this.mBeacon.getMac())
+                                        .setDeviceName(KBeaconDFUActivity.this.mBeacon.getName())
+                                        .setKeepBond(false);
 
-                            controller = starter.start(KBeaconDFUActivity.this, DFUService.class);
-                        } else {
-                            if (mProgressDialog.isShowing()){
-                                mProgressDialog.dismiss();
+                                starter.setPrepareDataObjectDelay(300L);
+                                starter.setZip(null, file.getPath());
+
+                                controller = starter.start(KBeaconDFUActivity.this, DFUService.class);
+                            } else {
+                                if (mProgressDialog.isShowing()) {
+                                    mProgressDialog.dismiss();
+                                }
+
+                                mUpdateStatusLabel.setText(R.string.UPDATE_NETWORK_FAIL);
+                                dfuComplete(getString(R.string.UPDATE_NETWORK_FAIL));
                             }
-
-                            mUpdateStatusLabel.setText(R.string.UPDATE_NETWORK_FAIL);
-                            dfuComplete(getString(R.string.UPDATE_NETWORK_FAIL));
                         }
-                    }
-                });
+                    });
+        }
     }
 
     @Override

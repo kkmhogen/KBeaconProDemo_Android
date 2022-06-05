@@ -19,6 +19,8 @@ package com.kkmcn.sensordemo;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -45,6 +47,11 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 public class DeviceScanActivity extends AppBaseActivity implements AdapterView.OnItemClickListener,
         KBeaconsMgr.KBeaconMgrDelegate, LeDeviceListAdapter.ListDataSource{
 	private final static String TAG = "Beacon.ScanAct";//DeviceScanActivity.class.getSimpleName();
+
+    private static final int PERMISSION_COARSE_LOCATION = 22;
+    private static final int PERMISSION_FINE_LOCATION = 23;
+    private static final int PERMISSION_SCAN = 24;
+
 
     private ListView mListView;
     private LeDeviceListAdapter mDevListAdapter;
@@ -228,10 +235,10 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
     private void handleStartScan(){
         if (!checkBluetoothPermitAllowed())
         {
-            toastShow("BLE scanning need location permission");
             return;
         }
 
+        mBeaconsMgr.setScanMinRssiFilter(-60);
         int nStartScan = mBeaconsMgr.startScanning();
         if (nStartScan == 0)
         {
@@ -249,29 +256,55 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
         }
     }
 
-    private boolean checkBluetoothPermitAllowed(){
-        if (!Utils.isLocationBluePermission(this)){
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
-                    23);
+    private boolean checkBluetoothPermitAllowed() {
+        boolean bHasPermission = true;
 
-            if(ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                toastShow(getString(R.string.location_permit_needed_for_ble));
-            }
-
-            if(ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-                toastShow(getString(R.string.location_permit_needed_for_ble));
-            }
-
-            return false;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    PERMISSION_FINE_LOCATION);
+            bHasPermission = false;
         }
-        else{
-            return true;
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    PERMISSION_COARSE_LOCATION);
+            bHasPermission = false;
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_SCAN},
+                        PERMISSION_SCAN);
+                bHasPermission = false;
+            }
+        }
+
+        return bHasPermission;
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSION_SCAN){
+            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED){
+                toastShow("The app need ble scanning permission for start ble scanning");
+            }
+        }
+        if (requestCode == PERMISSION_COARSE_LOCATION){
+            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED){
+                toastShow("The app need coarse location permission for start ble scanning");
+            }
+        }
+        if (requestCode == PERMISSION_FINE_LOCATION){
+            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED){
+                toastShow("The app need fine location permission for start ble scanning");
+            }
+        }
+    }
 
     public KBeacon getBeaconDevice(int nIndex)
     {

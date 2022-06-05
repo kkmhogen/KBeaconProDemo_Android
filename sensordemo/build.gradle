@@ -1,15 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion '28.0.3'
+    compileSdkVersion 32
+    buildToolsVersion '30.0.2'
     signingConfigs {
     }
 
     defaultConfig {
         applicationId 'com.kkmcn.sensordemo2'
         minSdkVersion 21
-        targetSdkVersion 29
+        targetSdkVersion 32
     }
     buildTypes {
         release {
@@ -30,8 +30,8 @@ repositories {
 dependencies {
     implementation 'com.android.support:support-v4:29.2.0'
     implementation 'com.android.support:appcompat-v7:29.2.0'
-    implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.0.8'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.1.4'
     implementation 'no.nordicsemi.android:dfu:1.10.3'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
 
 }

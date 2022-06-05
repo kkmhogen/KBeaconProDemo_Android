@@ -45,7 +45,7 @@
                         android:text="@string/BEACON_ADV_TYPE" />
 
                     <TextView
-                        android:id="@+id/beaconType"
+                        android:id="@+id/beaconAdvType"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
 
@@ -226,12 +226,11 @@
                     android:layout_height="50dp"
                     android:text="@string/enable_th_change_report"
                     android:textAllCaps="false" />
-
                 <Button
-                    android:id="@+id/enableRealtimeTHDataToApp"
+                    android:id="@+id/enablePeriodicallyTHDataToApp"
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
-                    android:text="@string/enable_th_realtime_report"
+                    android:text="@string/enable_th_periodically_report"
                     android:textAllCaps="false" />
 
 

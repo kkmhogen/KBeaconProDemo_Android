@@ -25,7 +25,7 @@ public class KBFirmwareDownload {
     }
 
     private final static String DEFAULT_DOWN_DIRECTORY_NAME = "KBeaconFirmware";
-    private final static String DEFAULT_DOWNLOAD_WEB_ADDRESS = "https://api.ieasygroup.com:8092/KBeaconFirmware/";
+    private final static String DEFAULT_DOWNLOAD_WEB_ADDRESS = "https://download.kkmiot.com:8093/KBeaconFirmware/";
 
     public final static int ERR_NETWORK_DOWN_FILE_ERROR = 0x1001;
     public final static int ERR_CREATE_DIRECTORY_FAIL = 0x1002;
@@ -38,15 +38,7 @@ public class KBFirmwareDownload {
     {
         mCtx = ctx;
         firmwareWebAddress = DEFAULT_DOWNLOAD_WEB_ADDRESS;
-        mDownloadFilePath = mCtx.getFilesDir().getPath() +  "/" + DEFAULT_DOWN_DIRECTORY_NAME;
-        makeSureFileDirectory();
-    }
-
-    KBFirmwareDownload(Activity ctx, String webPath, String fileDirectoryName)
-    {
-        mCtx = ctx;
-        firmwareWebAddress = webPath;
-        mDownloadFilePath = mCtx.getFilesDir().getPath() +  "/" + fileDirectoryName;
+        mDownloadFilePath = mCtx.getFilesDir().getPath() +  "/" + DEFAULT_DOWN_DIRECTORY_NAME + "/";
         makeSureFileDirectory();
     }
 
@@ -93,6 +85,20 @@ public class KBFirmwareDownload {
                 callback.onDownloadComplete(bReadFileSuccess, jsonPara, downResult);
             }
         });
+    }
+
+    public boolean isFirmwareFileExist(String strFirmwareFileName)
+    {
+        String strFilePath = mDownloadFilePath + strFirmwareFileName;
+        File file=new File(strFilePath);
+        return file.exists();
+    }
+
+    public File getFirmwareFile(String strFirmwareFileName)
+    {
+        String strFilePath = mDownloadFilePath + strFirmwareFileName;
+        File firmwareFile = new File(strFilePath);
+        return firmwareFile;
     }
 
     public void downLoadFile(final String fileName, final int timeoutMS, final DownloadFirmwareDataCallback callback) {
