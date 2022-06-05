@@ -1663,7 +1663,7 @@ Through the DFU function, you can upgrade the firmware of the device. Our DFU fu
 * KBFirmwareDownload: Responsible for download the JSON or firmware from KKM clouds.
 * DFUService: This DFU service that implementation Nordic's DFU library.
 * NotificationActivity: During the upgrade, a notification will pop up, click on the notification to enter this activity.
-![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/master/kbeacon_dfu_arc.png?raw=true)
+![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/kbeacon_dfu_arc.png?raw=true)
 
 ### 5.1 Add DFU function to the application.
 1. The DFU library need download the latest firmware from KKM cloud server. So you need add follow permission into AndroidManifest.xml
