@@ -51,6 +51,7 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
     private static final int PERMISSION_COARSE_LOCATION = 22;
     private static final int PERMISSION_FINE_LOCATION = 23;
     private static final int PERMISSION_SCAN = 24;
+    private static final int PERMISSION_CONNECT = 25;
 
 
     private ListView mListView;
@@ -280,6 +281,13 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
                         PERMISSION_SCAN);
                 bHasPermission = false;
             }
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_SCAN},
+                        PERMISSION_CONNECT);
+                bHasPermission = false;
+            }
         }
 
         return bHasPermission;
@@ -294,6 +302,13 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
                 toastShow("The app need ble scanning permission for start ble scanning");
             }
         }
+
+        if (requestCode == PERMISSION_CONNECT){
+            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED){
+                toastShow("The app need ble connecting permission for ble finding");
+            }
+        }
+
         if (requestCode == PERMISSION_COARSE_LOCATION){
             if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED){
                 toastShow("The app need coarse location permission for start ble scanning");
