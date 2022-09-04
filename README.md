@@ -747,6 +747,8 @@ void updateModifyParaToDevice()
  |`Adv slot`|0|0|1|NA|NA|
  |`Para`|NA|NA|4|NA|NA|
  |`Adv duration`|10|10|30|NA|NA|
+ |`Adv interval`|400.0|1000.0|500.0|NA|NA|
+ |`Adv TX power`|4|-4|0|NA|NA|
 
  The trigger advertisement has follow parameters:
  * Trigger No: Trigger instance number, the device supports up to 5 Triggers by default, the No is 0 ~ 4.
@@ -754,7 +756,9 @@ void updateModifyParaToDevice()
  * Trigger action: Action when trigger event happened. For example: start broadcast, make a sound, or send a notification to the connected App.
  * Trigger Adv slot: When the Trigger event happened, which advertisement Slot  starts to broadcasting
  * Trigger parameters: For motion trigger, the parameter is acceleration sensitivity. For temperature above trigger, you can set to the temperature threshold.
- *	Trigger Adv duration: The advertisement duration when trigger event happened. Unit is second.  
+ *	Trigger Adv duration: The advertisement duration when trigger event happened. Unit is second.
+ *	Trigger Adv TX power: The advertisement TX power when trigger event happened. Unit is dBm.
+ *	Trigger Adv interval: The advertisement interval when trigger event happened. Unit is ms.  
 
 
  Example 1: Trigger only advertisment  
@@ -791,9 +795,10 @@ When you set multiple triggers to the same slot broadcast, you can turn on the T
 1. Enable or button trigger event to advertisement.  
 
 ```Java
-
-// The device always broadcast UUID B9407F30-F5F8-466E-AFF9-25556B57FE67. When device detects button press, it triggers the broadcast of the iBeacon message(uuid=B9407F30-F5F8-466E-AFF9-25556B570001) in Slot1, and the iBeacon broadcast duration is 10 seconds.
-public void enableButtonTrigger() {
+//The following example is that the beacon  broadcasts the iBeacon message in Slot0.
+// When it detects button press, it triggers the UUID, adv interval, TX power change in slot 0,
+// the iBeacon broadcast duration is 10 seconds.
+public void enableButtonTriggerEvent2Adv() {
     if (!mBeacon.isConnected()) {
         toastShow("Device is not connected");
         return;
@@ -803,61 +808,49 @@ public void enableButtonTrigger() {
     final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
     if (oldCommonCfg != null && !oldCommonCfg.isSupportButton())
     {
-        toastShow("The device does not support humidity");
+        toastShow("device does not support humidity");
         return;
     }
 
-    try {
-        //set slot0 to always advertisement
-        final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
-        iBeaconAdv.setSlotIndex(0);  
-        iBeaconAdv.setAdvPeriod(1280.0f);
-        iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
-        iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
-        iBeaconAdv.setAdvConnectable(true);
-        iBeaconAdv.setAdvTriggerOnly(false);  //always advertisement
-        iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B57FE67");
-        iBeaconAdv.setMajorID(12);
-        iBeaconAdv.setMinorID(10);
+    //set slot0 to default alive advertisement
+    final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
+    iBeaconAdv.setSlotIndex(0);  //reuse previous slot
+    iBeaconAdv.setAdvPeriod(2560.0f);
+    iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
+    iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
+    iBeaconAdv.setAdvConnectable(true);
+    iBeaconAdv.setAdvTriggerOnly(false);  //always advertisement
+    iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B57FE67");
+    iBeaconAdv.setMajorID(12);
+    iBeaconAdv.setMinorID(10);
 
-        //set slot 1 to trigger adv information
-        final KBCfgAdvIBeacon triggerAdv = new KBCfgAdvIBeacon();
-        triggerAdv.setSlotIndex(1);
-        triggerAdv.setAdvPeriod(211.25f);
-        triggerAdv.setAdvMode(KBAdvMode.Legacy);
-        triggerAdv.setTxPower(KBAdvTxPower.RADIO_Pos4dBm);
-        triggerAdv.setAdvConnectable(false);
-        triggerAdv.setAdvTriggerOnly(true);  //trigger only advertisement
-        triggerAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570001");
-        triggerAdv.setMajorID(1);
-        triggerAdv.setMinorID(1);
+    //set trigger type
+    KBCfgTrigger btnTriggerPara = new KBCfgTrigger(0, KBTriggerType.BtnSingleClick);
+    btnTriggerPara.setTriggerAdvChangeMode(1); //change the UUID when trigger happened
+    btnTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
+    btnTriggerPara.setTriggerAdvSlot(0);
+    btnTriggerPara.setTriggerAdvTime(10);
 
-        //set trigger type
-        KBCfgTrigger btnTriggerPara = new KBCfgTrigger(0, KBTriggerType.BtnSingleClick);
-        btnTriggerPara.setTriggerAdvChangeMode(0);
-        btnTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
-        btnTriggerPara.setTriggerAdvSlot(1);
-        btnTriggerPara.setTriggerAdvTime(10);
+    //option trigger para, If the following two parameters are omitted,
+    // the trigger broadcast interval is 2560.0ms and the transmit power is -4dBm.
+    btnTriggerPara.setTriggerAdvPeriod(200.0f);
+    btnTriggerPara.setTriggerTxPower(KBAdvTxPower.RADIO_Pos4dBm);
 
-        //enable push button trigger
-        mTriggerButton.setEnabled(false);
-        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
-        cfgList.add(iBeaconAdv);
-        cfgList.add(triggerAdv);
-        cfgList.add(btnTriggerPara);
-        this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
-            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                mTriggerButton.setEnabled(true);
-                if (bConfigSuccess) {
-                    toastShow("enable push button trigger success");
-                } else {
-                    toastShow("enable push button trigger error:" + error.errorCode);
-                }
+    //enable push button trigger
+    mTriggerButtonAdv.setEnabled(false);
+    ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+    cfgList.add(iBeaconAdv);
+    cfgList.add(btnTriggerPara);
+    this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            mTriggerButtonAdv.setEnabled(true);
+            if (bConfigSuccess) {
+                toastShow("enable push button trigger success");
+            } else {
+                toastShow("enable push button trigger error:" + error.errorCode);
             }
-        });
-    } catch (KBException excpt) {
-        excpt.printStackTrace();
-    }
+        }
+    });
 }
 ```
 
@@ -962,10 +955,9 @@ The KBeacon can start broadcasting when it detects motion. Also the app can sett
 
 Enabling motion trigger is similar to push button trigger, which will not be described in detail here.
 
-1. Enable or motion trigger feature.  
-
+1. Enable motion trigger feature.  
+ 	![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/motion_trigger_example.jpg?raw=true)
 ```Java
-// the iBeacon broadcast duration is 10 seconds.
 public void enableMotionTrigger() {
     if (!mBeacon.isConnected()) {
         toastShow("Device is not connected");
@@ -980,44 +972,46 @@ public void enableMotionTrigger() {
         return;
     }
 
-    try {
-        //set trigger adv slot information
-        final KBCfgAdvIBeacon triggerAdv = new KBCfgAdvIBeacon();
-        triggerAdv.setSlotIndex(1);  //reuse previous slot
-        triggerAdv.setAdvPeriod(211.25f);
-        triggerAdv.setAdvMode(KBAdvMode.Legacy);
-        triggerAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
-        triggerAdv.setAdvConnectable(false);
-        triggerAdv.setAdvTriggerOnly(true);  //this slot only advertisement when trigger event happened
-        triggerAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570002");
-        triggerAdv.setMinorID(32);
-        triggerAdv.setMinorID(10);
+    //set trigger adv slot information
+    final KBCfgAdvIBeacon triggerAdv = new KBCfgAdvIBeacon();
+    triggerAdv.setSlotIndex(0);  //reuse previous slot
+    triggerAdv.setAdvPeriod(200f);
+    triggerAdv.setAdvMode(KBAdvMode.Legacy);
+    triggerAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
+    triggerAdv.setAdvConnectable(true);
+    triggerAdv.setAdvTriggerOnly(true);  //this slot only advertisement when trigger event happened
+    triggerAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570002");
+    triggerAdv.setMinorID(32);
+    triggerAdv.setMinorID(10);
 
-        //set trigger type
-        KBCfgTrigger mtionTriggerPara = new KBCfgTrigger(0, KBTriggerType.AccMotion);
-        mtionTriggerPara.setTriggerAdvSlot(1);
-        mtionTriggerPara.setTriggerAction(KBTriggerAction.Advertisement); //set trigger advertisement enable
-        mtionTriggerPara.setTriggerPara(5);  //set motion detection sensitive
-        mtionTriggerPara.setTriggerAdvTime(10);  //set trigger adv duration to 20 seconds
+    //set trigger type
+    KBCfgTriggerMotion motionTriggerPara = new KBCfgTriggerMotion();
+    motionTriggerPara.setTriggerType(KBTriggerType.AccMotion);
+    motionTriggerPara.setTriggerIndex(0);
+    motionTriggerPara.setTriggerAdvSlot(0);
+    motionTriggerPara.setTriggerAction(KBTriggerAction.Advertisement); //set trigger advertisement enable
+    motionTriggerPara.setTriggerAdvTime(60);  //set trigger adv duration to 60 seconds
 
-        //enable push button trigger
-        nEnableAccTrigger.setEnabled(false);
-        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
-        cfgList.add(triggerAdv);
-        cfgList.add(mtionTriggerPara);
-        this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
-            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                nEnableAccTrigger.setEnabled(true);
-                if (bConfigSuccess) {
-                    toastShow("enable motion trigger success");
-                } else {
-                    toastShow("enable motion trigger error:" + error.errorCode);
-                }
+    //set acc motion para
+    motionTriggerPara.setTriggerPara(5);  //set motion sensitive, unit is 16mg
+    motionTriggerPara.setAccODR(KBCfgTriggerMotion.ACC_ODR_25_HZ);
+    motionTriggerPara.setWakeupDuration(3);
+
+    //enable motion trigger
+    mEnableAccTrigger.setEnabled(false);
+    ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+    cfgList.add(triggerAdv);
+    cfgList.add(motionTriggerPara);
+    this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            mEnableAccTrigger.setEnabled(true);
+            if (bConfigSuccess) {
+                toastShow("enable motion trigger success");
+            } else {
+                toastShow("enable motion trigger error:" + error.errorCode);
             }
-        });
-    } catch (KBException excpt) {
-        excpt.printStackTrace();
-    }
+        }
+    });
 }
 ```
 
@@ -1538,7 +1532,7 @@ All command message between app and KBeacon are JSON format. Our SDK provide Has
  For some KBeacon device that has buzzer function. The app can ring device. For ring command, it has 5 parameters:
  * msg: msg type is 'ring'
  * ringTime: unit is ms. The KBeacon will start flash/alert for 'ringTime' millisecond  when receive this command.
- * ringType: 0x1:beep alert only; 0x2 led flash ; 0x0 turn off ring;
+ * ringType: 0x1:beep alert only; 0x2 led flash ; 0x4 moto, 0x0 turn off ;
  * ledOn: optional parameters, unit is ms. The LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x1.
  * ledOff: optional parameters, unit is ms. the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x1.  
 

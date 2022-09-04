@@ -24,6 +24,7 @@ import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvIBeacon;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorHT;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTrigger;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTriggerMotion;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBSensorType;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTimeRange;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerAction;
@@ -513,8 +514,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
-    //The following example is that the beacon usually broadcasts the KSensor message in Slot0.
-    // When it detects button press, it triggers the broadcast of the iBeacon message in Slot1, and
+    //The following example is that the beacon  broadcasts the iBeacon message in Slot0.
+    // When it detects button press, it triggers the UUID, adv interval, TX power change in slot 0,
     // the iBeacon broadcast duration is 10 seconds.
     public void enableButtonTriggerEvent2Adv() {
         if (!mBeacon.isConnected()) {
@@ -533,7 +534,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         //set slot0 to default alive advertisement
         final KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
         iBeaconAdv.setSlotIndex(0);  //reuse previous slot
-        iBeaconAdv.setAdvPeriod(1280f);
+        iBeaconAdv.setAdvPeriod(2560.0f);
         iBeaconAdv.setAdvMode(KBAdvMode.Legacy);
         iBeaconAdv.setTxPower(KBAdvTxPower.RADIO_Neg4dBm);
         iBeaconAdv.setAdvConnectable(true);
@@ -542,30 +543,22 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         iBeaconAdv.setMajorID(12);
         iBeaconAdv.setMinorID(10);
 
-        //set slot 1 to trigger adv information
-        final KBCfgAdvIBeacon triggerAdv = new KBCfgAdvIBeacon();
-        triggerAdv.setSlotIndex(1);
-        triggerAdv.setAdvPeriod(200f);
-        triggerAdv.setAdvMode(KBAdvMode.Legacy);
-        triggerAdv.setTxPower(KBAdvTxPower.RADIO_Pos4dBm);
-        triggerAdv.setAdvConnectable(false);
-        triggerAdv.setAdvTriggerOnly(true);  //always advertisement
-        triggerAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570001");
-        triggerAdv.setMajorID(1);
-        triggerAdv.setMinorID(1);
-
         //set trigger type
         KBCfgTrigger btnTriggerPara = new KBCfgTrigger(0, KBTriggerType.BtnSingleClick);
-        btnTriggerPara.setTriggerAdvChangeMode(0);
+        btnTriggerPara.setTriggerAdvChangeMode(1); //change the UUID when trigger happened
         btnTriggerPara.setTriggerAction(KBTriggerAction.Advertisement);
-        btnTriggerPara.setTriggerAdvSlot(1);
+        btnTriggerPara.setTriggerAdvSlot(0);
         btnTriggerPara.setTriggerAdvTime(10);
+
+        //option trigger para, If the following two parameters are omitted,
+        // the trigger broadcast interval is 2560.0ms and the transmit power is -4dBm.
+        btnTriggerPara.setTriggerAdvPeriod(200.0f);
+        btnTriggerPara.setTriggerTxPower(KBAdvTxPower.RADIO_Pos4dBm);
 
         //enable push button trigger
         mTriggerButtonAdv.setEnabled(false);
         ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
         cfgList.add(iBeaconAdv);
-        cfgList.add(triggerAdv);
         cfgList.add(btnTriggerPara);
         this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
@@ -650,8 +643,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
-    // When the beacon detects motion event, it triggers the broadcast of the iBeacon message in Slot1, and
-    // the iBeacon broadcast duration is 10 seconds.
+    // When the beacon detects motion event, it triggers the broadcast of the iBeacon message in Slot0, and
+    // the iBeacon broadcast duration is 60 seconds.
     public void enableMotionTrigger() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
@@ -668,28 +661,34 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         //set trigger adv slot information
         final KBCfgAdvIBeacon triggerAdv = new KBCfgAdvIBeacon();
-        triggerAdv.setSlotIndex(1);  //reuse previous slot
+        triggerAdv.setSlotIndex(0);  //reuse previous slot
         triggerAdv.setAdvPeriod(200f);
         triggerAdv.setAdvMode(KBAdvMode.Legacy);
         triggerAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
-        triggerAdv.setAdvConnectable(false);
+        triggerAdv.setAdvConnectable(true);
         triggerAdv.setAdvTriggerOnly(true);  //this slot only advertisement when trigger event happened
         triggerAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570002");
         triggerAdv.setMinorID(32);
         triggerAdv.setMinorID(10);
 
         //set trigger type
-        KBCfgTrigger mtionTriggerPara = new KBCfgTrigger(0, KBTriggerType.AccMotion);
-        mtionTriggerPara.setTriggerAdvSlot(1);
-        mtionTriggerPara.setTriggerAction(KBTriggerAction.Advertisement); //set trigger advertisement enable
-        mtionTriggerPara.setTriggerPara(5);  //set motion detection sensitive
-        mtionTriggerPara.setTriggerAdvTime(10);  //set trigger adv duration to 20 seconds
+        KBCfgTriggerMotion motionTriggerPara = new KBCfgTriggerMotion();
+        motionTriggerPara.setTriggerType(KBTriggerType.AccMotion);
+        motionTriggerPara.setTriggerIndex(0);
+        motionTriggerPara.setTriggerAdvSlot(0);
+        motionTriggerPara.setTriggerAction(KBTriggerAction.Advertisement); //set trigger advertisement enable
+        motionTriggerPara.setTriggerAdvTime(60);  //set trigger adv duration to 60 seconds
 
-        //enable push button trigger
+        //set acc motion para
+        motionTriggerPara.setTriggerPara(5);  //set motion sensitive, unit is 16mg
+        motionTriggerPara.setAccODR(KBCfgTriggerMotion.ACC_ODR_25_HZ);
+        motionTriggerPara.setWakeupDuration(3);
+
+        //enable motion trigger
         mEnableAccTrigger.setEnabled(false);
         ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
         cfgList.add(triggerAdv);
-        cfgList.add(mtionTriggerPara);
+        cfgList.add(motionTriggerPara);
         this.mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
                 mEnableAccTrigger.setEnabled(true);
