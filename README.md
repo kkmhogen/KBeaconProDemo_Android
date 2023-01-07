@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.1.4'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.1.8'
 }
 ```
 This library is also open source, please refer to this link.  
@@ -201,6 +201,11 @@ KBeaconsMgr.KBeaconMgrDelegate beaconMgrExample = new KBeaconsMgr.KBeaconMgrDele
                         //device that has PIR sensor
                         if (advSensor.getPirIndication() != null) {
                             Log.v(LOG_TAG, "pir indication:" + advSensor.getPirIndication());
+                        }
+
+                        //device that has light sensor
+                        if (advSensor.getLuxValue() != null) {
+                            Log.v(LOG_TAG, "light level:" + advSensor.getLuxValue());
                         }
                         break;
                     }
@@ -1225,6 +1230,44 @@ public void enablePIRTrigger() {
 }    
 ```
 
+#### 4.3.4.6 Light trigger
+```Java
+// When the beacon detects light level > x, the device will record the event
+public void enableLightTrigger() {
+    if (!mBeacon.isConnected()) {
+        toastShow("Device is not connected");
+        return;
+    }
+
+    //check device capability
+    final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+    if (oldCommonCfg != null && !oldCommonCfg.isSupportLightSensor())
+    {
+        toastShow("device does not support light sensor");
+        return;
+    }
+
+    //enable light trigger
+    KBCfgTrigger pirTriggerPara = new KBCfgTrigger(0, KBTriggerType.LightLUXAbove);
+
+    //Save the Light event to memory flash and report it to the APP at the same time
+    pirTriggerPara.setTriggerAction(KBTriggerAction.Record | KBTriggerAction.Report2App);
+
+    //If light level > 500 lx, then record the event and report event to app
+    pirTriggerPara.setTriggerPara(500);
+
+    this.mBeacon.modifyConfig(pirTriggerPara, new KBeacon.ActionCallback() {
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess) {
+                toastShow("enable light trigger success");
+            } else {
+                toastShow("enable light trigger error:" + error.errorCode);
+            }
+        }
+    });
+}  
+```
+
 #### 4.3.5 Sensor parameters
 If the device has sensors, such as temperature and humidity sensors, we may need to setting the sensor parameters, such as the measurement interval.
 For some sensors, we may not want it to work all the time, such as the Door sensor, we may only want it to work at night. The advantage of this is, the power consumption can be reduced, and the unnecessary trigger can also be reduced.
@@ -1320,6 +1363,53 @@ public void setTHSensorMeasureParameters()
 }
 ```
 
+#### 4.3.5.2.1 Config light sensor measure parameters and log paramaters
+For light sensors, we can set the measurement interval. In addition, we can use the device as a Logger, and we can set the log conditions.
+```Java
+//set light sensor measure parameters
+public void setLightSensorMeasureParameters()
+{
+  if (!mBeacon.isConnected())
+  {
+      toastShow("Device is not connected");
+      return;
+  }
+
+  //check device capability
+  KBCfgCommon oldCommonCfg = mBeacon.getCommonCfg();
+  if (oldCommonCfg != null && !oldCommonCfg.isSupportLightSensor())
+  {
+      toastShow("Device does not supported light sensor");
+      return;
+  }
+
+  KBCfgSensorLight sensorLightPara = new KBCfgSensorLight();
+  //enable light measure log
+  sensorLightPara.setLogEnable(true);
+
+  //unit is second, set measure interval to 5 seconds
+  sensorLightPara.setMeasureInterval(5);
+
+  //unit is 1 lx, if abs(current light level - last saved light level) > 20, then new record created
+  sensorLightPara.setLogChangeThreshold(20);
+
+  //enable sensor advertisement
+  mBeacon.modifyConfig(sensorLightPara, new KBeacon.ActionCallback() {
+      @Override
+      public void onActionComplete(boolean bConfigSuccess, KBException error) {
+          if (bConfigSuccess)
+          {
+              toastShow("config data to beacon success");
+          }
+          else
+          {
+              toastShow("config failed for error:" + error.errorCode);
+          }
+      }
+  });
+}
+```
+
 #### 4.3.5.3 Read sensor history records
 For some beacon devices, it can logging the trigger events to memory flash. Such as Door open and close events, PIR detection events, temperature and humidity recording. For these devices, we can read these saved histories record through the APP or Gateway.
 
@@ -1382,8 +1472,8 @@ public void readTempHistoryRecordExample()
         new KBSensorDataMsgBase.ReadSensorCallback()
         {
             @Override
-            public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-                if (bConfigSuccess)
+            public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
+                if (bSuccess)
                 {
                     KBHumidityDataMsg.ReadHTSensorDataRsp dataRsp = (KBHumidityDataMsg.ReadHTSensorDataRsp) obj;
                     for (KBHumidityRecord record: dataRsp.readDataRspList)
@@ -1400,6 +1490,7 @@ public void readTempHistoryRecordExample()
             }
         });
 }
+
 //read door cutoff history records
 public void readCutoffHistoryRecordExample()
 {
@@ -1411,8 +1502,8 @@ public void readCutoffHistoryRecordExample()
             new KBSensorDataMsgBase.ReadSensorCallback()
             {
                 @Override
-                public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-                    if (bConfigSuccess)
+                public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
+                    if (bSuccess)
                     {
                         KBCutoffDataMsg.ReadDoorSensorDataRsp dataRsp = (KBCutoffDataMsg.ReadDoorSensorDataRsp) obj;
                         for (KBCutoffRecord record: dataRsp.readDataRspList)
@@ -1428,7 +1519,8 @@ public void readCutoffHistoryRecordExample()
                 }
             });
 }
-//read door PIR detection history records
+
+//read PIR detection history records
 public void readPIRHistoryRecordExample()
 {
     KBPIRDataMsg pirDataMsg = new KBPIRDataMsg();
@@ -1439,8 +1531,8 @@ public void readPIRHistoryRecordExample()
             new KBSensorDataMsgBase.ReadSensorCallback()
             {
                 @Override
-                public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-                    if (bConfigSuccess)
+                public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
+                    if (bSuccess)
                     {
                         KBPIRDataMsg.ReadPIRSensorDataRsp dataRsp = (KBPIRDataMsg.ReadPIRSensorDataRsp) obj;
                         for (KBPIRRecord record: dataRsp.readDataRspList)
@@ -1455,6 +1547,35 @@ public void readPIRHistoryRecordExample()
                     }
                 }
             });
+}
+
+//read light sensor history records
+public void readLightHistoryRecordExample()
+{
+  KBLightDataMsg lightDataMsg = new KBLightDataMsg();
+  lightDataMsg.readSensorRecord(mBeacon,
+          INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+          KBSensorReadOption.NewRecord,  //read direction type
+          100,   //number of records the app want to read
+          new KBSensorDataMsgBase.ReadSensorCallback()
+          {
+              @Override
+              public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
+                  if (bSuccess)
+                  {
+                      KBLightDataMsg.ReadLightSensorDataRsp dataRsp = (KBLightDataMsg.ReadLightSensorDataRsp) obj;
+                      for (KBLightRecord record: dataRsp.readDataRspList)
+                      {
+                          Log.v(LOG_TAG, "Light utc time:" + record.mUtcTime);
+                          Log.v(LOG_TAG, "Light level:" + record.mLightLevel);
+                      }
+                      if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                      {
+                          Log.v(LOG_TAG, "Read data complete");
+                      }
+                  }
+              }
+          });
 }
 ```  
 

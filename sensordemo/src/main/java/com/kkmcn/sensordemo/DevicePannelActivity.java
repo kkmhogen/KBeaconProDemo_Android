@@ -23,6 +23,7 @@ import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvIBeacon;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorHT;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorLight;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTrigger;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTriggerMotion;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBSensorType;
@@ -35,12 +36,13 @@ import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBCutoffDataMsg;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBCutoffRecord;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityDataMsg;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityRecord;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBLightDataMsg;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBLightRecord;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBPIRDataMsg;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBPIRRecord;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorDataMsgBase;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadOption;
 import com.kkmcn.kbeaconlib2.KBUtility;
-import com.kkmcn.kbeaconlib2.UTCTime;
 import com.kkmcn.sensordemo.dfulibrary.KBeaconDFUActivity;
 import com.kkmcn.sensordemo.recordhistory.CfgHTBeaconHistoryActivity;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgBase;
@@ -907,7 +909,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         KBCfgTrigger thTriggerPara = new KBCfgTrigger(0,
                 KBTriggerType.HTHumidityAbove);
         thTriggerPara.setTriggerAction(KBTriggerAction.Report2App);  //set trigger event that report to app
-        thTriggerPara.setTriggerPara(70);
+        thTriggerPara.setTriggerPara(80);
 
         nEnableTHTrigger2App.setEnabled(false);
         this.mBeacon.modifyConfig(thTriggerPara, new KBeacon.ActionCallback() {
@@ -1017,6 +1019,113 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 }
             }
         });
+    }
+
+    // When the beacon detects light level > x, the device will record the event
+    public void enableLightTrigger() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportLightSensor())
+        {
+            toastShow("device does not support light sensor");
+            return;
+        }
+
+        //enable light trigger
+        KBCfgTrigger pirTriggerPara = new KBCfgTrigger(0, KBTriggerType.LightLUXAbove);
+
+        //Save the Light event to memory flash and report it to the APP at the same time
+        pirTriggerPara.setTriggerAction(KBTriggerAction.Record | KBTriggerAction.Report2App);
+
+        //If light level > 500 lx, then record the event and report event to app
+        pirTriggerPara.setTriggerPara(500);
+
+        this.mBeacon.modifyConfig(pirTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess) {
+                    toastShow("enable light trigger success");
+                } else {
+                    toastShow("enable light trigger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //set light sensor measure parameters
+    public void setLightSensorMeasureParameters()
+    {
+        if (!mBeacon.isConnected())
+        {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        KBCfgCommon oldCommonCfg = mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportLightSensor())
+        {
+            toastShow("Device does not supported light sensor");
+            return;
+        }
+
+        KBCfgSensorLight sensorLightPara = new KBCfgSensorLight();
+        //enable light measure log
+        sensorLightPara.setLogEnable(true);
+
+        //unit is second, set measure interval to 5 seconds
+        sensorLightPara.setMeasureInterval(5);
+
+        //unit is 1 lx, if abs(current light level - last saved light level) > 20, then log new record
+        sensorLightPara.setLogChangeThreshold(20);
+
+        //enable sensor advertisement
+        mBeacon.modifyConfig(sensorLightPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess)
+                {
+                    toastShow("config data to beacon success");
+                }
+                else
+                {
+                    toastShow("config failed for error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //read light sensor history records
+    public void readLightHistoryRecordExample()
+    {
+        KBLightDataMsg lightDataMsg = new KBLightDataMsg();
+        lightDataMsg.readSensorRecord(mBeacon,
+                INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+                KBSensorReadOption.NewRecord,  //read direction type
+                100,   //number of records the app want to read
+                new KBSensorDataMsgBase.ReadSensorCallback()
+                {
+                    @Override
+                    public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+                        if (bConfigSuccess)
+                        {
+                            KBLightDataMsg.ReadLightSensorDataRsp dataRsp = (KBLightDataMsg.ReadLightSensorDataRsp) obj;
+                            for (KBLightRecord record: dataRsp.readDataRspList)
+                            {
+                                Log.v(LOG_TAG, "Light utc time:" + record.mUtcTime);
+                                Log.v(LOG_TAG, "Light level:" + record.mLightLevel);
+                            }
+                            if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                            {
+                                Log.v(LOG_TAG, "Read data complete");
+                            }
+                        }
+                    }
+                });
     }
 
     //set disable period parameters
@@ -1166,8 +1275,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             new KBSensorDataMsgBase.ReadSensorCallback()
             {
                 @Override
-                public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-                    if (bConfigSuccess)
+                public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
+                    if (bSuccess)
                     {
                         KBHumidityDataMsg.ReadHTSensorDataRsp dataRsp = (KBHumidityDataMsg.ReadHTSensorDataRsp) obj;
                         for (KBHumidityRecord record: dataRsp.readDataRspList)
@@ -1185,7 +1294,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             });
     }
 
-    //read door cutoff history records
+    //read door open/close history records
     public void readCutoffHistoryRecordExample()
     {
         KBCutoffDataMsg cutoffDataMsg = new KBCutoffDataMsg();
@@ -1196,8 +1305,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 new KBSensorDataMsgBase.ReadSensorCallback()
                 {
                     @Override
-                    public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-                        if (bConfigSuccess)
+                    public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
+                        if (bSuccess)
                         {
                             KBCutoffDataMsg.ReadDoorSensorDataRsp dataRsp = (KBCutoffDataMsg.ReadDoorSensorDataRsp) obj;
                             for (KBCutoffRecord record: dataRsp.readDataRspList)
@@ -1225,8 +1334,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 new KBSensorDataMsgBase.ReadSensorCallback()
                 {
                     @Override
-                    public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-                        if (bConfigSuccess)
+                    public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
+                        if (bSuccess)
                         {
                             KBPIRDataMsg.ReadPIRSensorDataRsp dataRsp = (KBPIRDataMsg.ReadPIRSensorDataRsp) obj;
                             for (KBPIRRecord record: dataRsp.readDataRspList)

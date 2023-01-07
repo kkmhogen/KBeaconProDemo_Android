@@ -41,8 +41,6 @@ import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketSystem;
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvType;
 import com.kkmcn.kbeaconlib2.KBeacon;
 import com.kkmcn.kbeaconlib2.KBeaconsMgr;
-import com.kbeacon.ibeacondemo.R;
-
 import java.util.HashMap;
 import java.util.Locale;
 

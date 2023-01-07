@@ -30,11 +30,20 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAccSensorValue;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketBase;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyTLM;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyUID;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyURL;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketIBeacon;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketSensor;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketSystem;
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvType;
 import com.kkmcn.kbeaconlib2.KBeacon;
 import com.kkmcn.kbeaconlib2.KBeaconsMgr;
 
 import java.util.HashMap;
+import java.util.Locale;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.core.app.ActivityCompat;
@@ -47,6 +56,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 public class DeviceScanActivity extends AppBaseActivity implements AdapterView.OnItemClickListener,
         KBeaconsMgr.KBeaconMgrDelegate, LeDeviceListAdapter.ListDataSource{
 	private final static String TAG = "Beacon.ScanAct";//DeviceScanActivity.class.getSimpleName();
+
+    private static final String LOG_TAG = "ScanExample";
 
     private static final int PERMISSION_COARSE_LOCATION = 22;
     private static final int PERMISSION_FINE_LOCATION = 23;
@@ -160,6 +171,97 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
             mBeaconsArray = new KBeacon[mBeaconsDictory.size()];
             mBeaconsDictory.values().toArray(mBeaconsArray);
             mDevListAdapter.notifyDataSetChanged();
+        }
+    }
+
+    public void example_printAllAdvPackets(KBeacon[] beacons)
+    {
+        for (KBeacon beacon : beacons) {
+            //get beacon adv common info
+            Log.v(LOG_TAG, "beacon mac:" + beacon.getMac());
+            Log.v(LOG_TAG, "beacon name:" + beacon.getName());
+            Log.v(LOG_TAG, "beacon rssi:" + beacon.getRssi());
+
+            //get adv packet
+            for (KBAdvPacketBase advPacket : beacon.allAdvPackets()) {
+                switch (advPacket.getAdvType()) {
+                    case KBAdvType.IBeacon: {
+                        KBAdvPacketIBeacon advIBeacon = (KBAdvPacketIBeacon) advPacket;
+                        Log.v(LOG_TAG, "iBeacon uuid:" + advIBeacon.getUuid());
+                        Log.v(LOG_TAG, "iBeacon major:" + advIBeacon.getMajorID());
+                        Log.v(LOG_TAG, "iBeacon minor:" + advIBeacon.getMinorID());
+                        break;
+                    }
+
+                    case KBAdvType.EddyTLM: {
+                        KBAdvPacketEddyTLM advTLM = (KBAdvPacketEddyTLM) advPacket;
+                        Log.v(LOG_TAG, "TLM battery:" + advTLM.getBatteryLevel());
+                        Log.v(LOG_TAG, "TLM Temperature:" + advTLM.getTemperature());
+                        Log.v(LOG_TAG, "TLM adv count:" + advTLM.getAdvCount());
+                        break;
+                    }
+
+                    case KBAdvType.Sensor: {
+                        KBAdvPacketSensor advSensor = (KBAdvPacketSensor) advPacket;
+                        Log.v(LOG_TAG, "Sensor battery:" + advSensor.getBatteryLevel());
+                        Log.v(LOG_TAG, "Sensor temp:" + advSensor.getTemperature());
+
+                        //device that has acc sensor
+                        KBAccSensorValue accPos = advSensor.getAccSensor();
+                        if (accPos != null) {
+                            String strAccValue = String.format(Locale.ENGLISH, "x:%d; y:%d; z:%d",
+                                    accPos.xAis, accPos.yAis, accPos.zAis);
+                            Log.v(LOG_TAG, "Sensor Acc:" + strAccValue);
+                        }
+
+                        //device that has humidity sensor
+                        if (advSensor.getHumidity() != null) {
+                            Log.v(LOG_TAG, "Sensor humidity:" + advSensor.getHumidity());
+                        }
+
+                        //device that has cutoff sensor
+                        if (advSensor.getWatchCutoff() != null) {
+                            Log.v(LOG_TAG, "cutoff flag:" + advSensor.getWatchCutoff());
+                        }
+
+                        //device that has PIR sensor
+                        if (advSensor.getPirIndication() != null) {
+                            Log.v(LOG_TAG, "pir indication:" + advSensor.getPirIndication());
+                        }
+
+                        //device that has light sensor
+                        if (advSensor.getLuxValue() != null) {
+                            Log.v(LOG_TAG, "light level:" + advSensor.getLuxValue());
+                        }
+                        break;
+                    }
+
+                    case KBAdvType.EddyUID: {
+                        KBAdvPacketEddyUID advUID = (KBAdvPacketEddyUID) advPacket;
+                        Log.v(LOG_TAG, "UID Nid:" + advUID.getNid());
+                        Log.v(LOG_TAG, "UID Sid:" + advUID.getSid());
+                        break;
+                    }
+
+                    case KBAdvType.EddyURL: {
+                        KBAdvPacketEddyURL advURL = (KBAdvPacketEddyURL) advPacket;
+                        Log.v(LOG_TAG, "URL:" + advURL.getUrl());
+                        break;
+                    }
+
+                    case KBAdvType.System: {
+                        KBAdvPacketSystem advSystem = (KBAdvPacketSystem) advPacket;
+                        Log.v(LOG_TAG, "System mac:" + advSystem.getMacAddress());
+                        Log.v(LOG_TAG, "System model:" + advSystem.getModel());
+                        Log.v(LOG_TAG, "System batt:" + advSystem.getBatteryPercent());
+                        Log.v(LOG_TAG, "System ver:" + advSystem.getVersion());
+                        break;
+                    }
+
+                    default:
+                        break;
+                }
+            }
         }
     }
 
@@ -284,7 +386,7 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
                     != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_SCAN},
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT},
                         PERMISSION_CONNECT);
                 bHasPermission = false;
             }
