@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.1.8'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.1.9'
 }
 ```
 This library is also open source, please refer to this link.  
