@@ -755,6 +755,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             Log.v(LOG_TAG, "support humidify sensor:" + commonCfg.isSupportHumiditySensor());
             Log.v(LOG_TAG, "support max tx power:" + commonCfg.getMaxTxPower());
             Log.v(LOG_TAG, "support min tx power:" + commonCfg.getMinTxPower());
+            Log.v(LOG_TAG, "device battery:" + commonCfg.getBattery());
 
             //slot adv type list
             ArrayList<KBCfgAdvBase> advArrays = mBeacon.getSlotCfgList();
