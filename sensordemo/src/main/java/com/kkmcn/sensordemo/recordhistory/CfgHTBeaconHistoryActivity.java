@@ -17,20 +17,20 @@ import android.widget.AbsListView;
 import android.widget.ListView;
 
 
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBSensorType;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordBase;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadInfoRsp;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadOption;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadRecordRsp;
 import com.kkmcn.sensordemo.AppBaseActivity;
 import com.kkmcn.sensordemo.R;
 import com.kkmcn.kbeaconlib2.KBException;
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityDataMsg;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityRecord;
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorDataMsgBase;
 import com.kkmcn.kbeaconlib2.KBeacon;
 import com.kkmcn.kbeaconlib2.KBeaconsMgr;
 import com.kkmcn.kbeaconlib2.UTCTime;
 
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
-import static com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorDataMsgBase.INVALID_DATA_RECORD_POS;
 
 public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsListView.OnScrollListener {
 
@@ -46,8 +46,6 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
 
     public LayoutInflater mInflater;
     public ListView mListView;
-
-    KBHumidityDataMsg mSensorDataMsg = new KBHumidityDataMsg();
 
     CfgHTRecordFileMgr mRecordFileMgr = new CfgHTRecordFileMgr();
     public boolean mIsLoading = false;//表示是否正处于加载状态
@@ -180,34 +178,29 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
         //set status to loading
         mIsLoading = true;
 
-        mSensorDataMsg.readSensorDataInfo(mBeacon,
-                new KBSensorDataMsgBase.ReadSensorCallback()
-                {
-                    @Override
-                    public void onReadComplete(boolean bConfigSuccess, Object obj, KBException error) {
+        mBeacon.readSensorDataInfo(KBSensorType.HTHumidity,
+                (bConfigSuccess, infRsp, error) -> {
 
-                        if (!bConfigSuccess){
-                            toastShow("read data failed");
-                            mHandler.sendEmptyMessage(MSG_LOAD_DATA_CMP);
-                            return;
-                        }
+                    if (!bConfigSuccess){
+                        toastShow("read data failed");
+                        mHandler.sendEmptyMessage(MSG_LOAD_DATA_CMP);
+                        return;
+                    }
 
-                        KBSensorDataMsgBase.ReadSensorInfoRsp infRsp = (KBSensorDataMsgBase.ReadSensorInfoRsp) obj;
-                        mUtcOffset = UTCTime.getUTCTimeSeconds() - infRsp.readInfoUtcSeconds;
+                    mUtcOffset = UTCTime.getUTCTimeSeconds() - infRsp.readInfoUtcSeconds;
 
-                        Log.v(LOG_TAG, "Total records in device:" + infRsp.totalRecordNumber);
+                    Log.v(LOG_TAG, "Total records in device:" + infRsp.totalRecordNumber);
 
-                        Log.v(LOG_TAG, "Un read records in device:" + infRsp.unreadRecordNumber);
-                        mbHasReadDataInfo = true;
+                    Log.v(LOG_TAG, "Un read records in device:" + infRsp.unreadRecordNumber);
+                    mbHasReadDataInfo = true;
 
-                        if (infRsp.unreadRecordNumber == 0)
-                        {
-                            mHandler.sendEmptyMessage(MSG_LOAD_NO_MORE_DATA);
-                        }
-                        else
-                        {
-                            startReadNextRecordPage();
-                        }
+                    if (infRsp.unreadRecordNumber == 0)
+                    {
+                        mHandler.sendEmptyMessage(MSG_LOAD_NO_MORE_DATA);
+                    }
+                    else
+                    {
+                        startReadNextRecordPage();
                     }
                 }
         );
@@ -221,47 +214,43 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
         //set status to loading
         mIsLoading = true;
 
-        mSensorDataMsg.readSensorRecord(mBeacon,
-                INVALID_DATA_RECORD_POS,
+        mBeacon.readSensorRecord(KBSensorType.HTHumidity,
+                KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS,
                 KBSensorReadOption.NewRecord,
                 100,
-                new KBSensorDataMsgBase.ReadSensorCallback()
-                {
-                    @Override
-                    public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-                        if (!bConfigSuccess){
-                            toastShow("read data failed");
-                            mHandler.sendEmptyMessage(MSG_LOAD_DATA_CMP);
-                            return;
-                        }
+                (bConfigSuccess, dataRsp, error) -> {
+                    if (!bConfigSuccess){
+                        toastShow("read data failed");
+                        mHandler.sendEmptyMessage(MSG_LOAD_DATA_CMP);
+                        return;
+                    }
 
-                        KBHumidityDataMsg.ReadHTSensorDataRsp dataRsp = (KBHumidityDataMsg.ReadHTSensorDataRsp) obj;
-                        for (KBHumidityRecord record: dataRsp.readDataRspList)
-                        {
-                            Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
-                            Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
-                            Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
-                        }
+                    for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
+                    {
+                        KBHumidityRecord record = (KBHumidityRecord)sensorRecord;
+                        Log.v(LOG_TAG, "record utc time:" + record.utcTime);
+                        Log.v(LOG_TAG, "record temperature:" + record.temperature);
+                        Log.v(LOG_TAG, "record humidity:" + record.humidity);
+                    }
 
-                        if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
-                        {
-                            Log.v(LOG_TAG, "Read data complete");
-                        }
+                    if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                    {
+                        Log.v(LOG_TAG, "Read data complete");
+                    }
 
-                        mRecordFileMgr.appendRecord(dataRsp.readDataRspList);
-                        int nReadDataNum = dataRsp.readDataRspList.size();
-                        mReadDataNextMsgID = dataRsp.readDataNextPos;
-                        if (mReadDataNextMsgID == INVALID_DATA_RECORD_POS)
-                        {
-                            Message msg = mHandler.obtainMessage(MSG_LOAD_NO_MORE_DATA);
-                            msg.arg1 = nReadDataNum;
-                            mHandler.sendMessage(msg);
-                        }else {
-                            Log.v(LOG_TAG, "Wait read next data pos:" + mReadDataNextMsgID);
-                            Message msg = mHandler.obtainMessage(MSG_LOAD_DATA_CMP);
-                            msg.arg1 = nReadDataNum;
-                            mHandler.sendMessage(msg);
-                        }
+                    mRecordFileMgr.appendRecord(dataRsp.readDataRspList);
+                    int nReadDataNum = dataRsp.readDataRspList.size();
+                    mReadDataNextMsgID = dataRsp.readDataNextPos;
+                    if (mReadDataNextMsgID == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                    {
+                        Message msg = mHandler.obtainMessage(MSG_LOAD_NO_MORE_DATA);
+                        msg.arg1 = nReadDataNum;
+                        mHandler.sendMessage(msg);
+                    }else {
+                        Log.v(LOG_TAG, "Wait read next data pos:" + mReadDataNextMsgID);
+                        Message msg = mHandler.obtainMessage(MSG_LOAD_DATA_CMP);
+                        msg.arg1 = nReadDataNum;
+                        mHandler.sendMessage(msg);
                     }
                 }
         );
@@ -316,11 +305,11 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
         builder.setPositiveButton(R.string.Dialog_OK, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                mSensorDataMsg.clearSensorRecord(mBeacon,
-                        new KBSensorDataMsgBase.ReadSensorCallback()
+                mBeacon.clearSensorRecord(KBSensorType.HTHumidity,
+                        new KBeacon.SensorCommandCallback()
                         {
                             @Override
-                            public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+                            public void onCommandComplete(boolean bConfigSuccess,  Object obj, KBException error) {
                                 if (!bConfigSuccess){
                                     toastShow(getString(R.string.track_clear_fail));
                                 }

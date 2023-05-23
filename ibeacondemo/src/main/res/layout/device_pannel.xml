@@ -359,13 +359,6 @@
                 android:orientation="horizontal"
                 android:weightSum="1.0">
 
-
-                <Button
-                    android:id="@+id/dfuDevice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:text="@string/kb_dfu_device" />
-
                 <Button
                     android:id="@+id/beacon2TLM"
                     android:layout_width="wrap_content"

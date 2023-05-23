@@ -66,14 +66,14 @@ public class CfgHTHistoryAdapter extends BaseAdapter {
             view = convertView;
             holder = (ViewHolder) view.getTag();
         }
-        KBHumidityRecord nbRecord = mSensorData.get(position);
-        String strNearbyUtcTime = mRecordTimeFormat.format(nbRecord.mUtcTime * 1000);
+        KBHumidityRecord nbRecord = (KBHumidityRecord)mSensorData.get(position);
+        String strNearbyUtcTime = mRecordTimeFormat.format(nbRecord.utcTime * 1000);
         holder.textViewUTCTime.setText(strNearbyUtcTime);
 
-        String strTemperature =  mCtx.getString(R.string.BEACON_TEMP) + " " + nbRecord.mTemperature + mCtx.getString(R.string.BEACON_TEMP_UINT);
+        String strTemperature =  mCtx.getString(R.string.BEACON_TEMP) + " " + nbRecord.temperature + mCtx.getString(R.string.BEACON_TEMP_UINT);
         holder.textViewTemperature.setText(strTemperature);
 
-        String strHumidity = mCtx.getString(R.string.BEACON_HUM) + " " + nbRecord.mHumidity + "%";
+        String strHumidity = mCtx.getString(R.string.BEACON_HUM) + " " + nbRecord.humidity + "%";
         holder.textViewHumidity.setText(strHumidity);
         return view;
     }

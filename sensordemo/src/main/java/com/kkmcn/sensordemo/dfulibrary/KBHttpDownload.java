@@ -1,10 +1,10 @@
-package com.kbeacon.ibeacondemo.dfulibrary;
+package com.kkmcn.sensordemo.dfulibrary;
 
 import android.app.Activity;
 
-import com.kbeacon.ibeacondemo.Utils;
-import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgBase;
 import com.kkmcn.kbeaconlib2.KBException;
+
+import org.json.JSONException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,33 +12,49 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
 
-public class KBFirmwareDownload {
-
-    public interface DownloadFirmwareInfoCallback {
-        void onDownloadComplete(boolean bSuccess, HashMap<String, Object> firmwareInfo, KBException error);
-    }
-
-    public interface DownloadFirmwareDataCallback {
-        void onDownloadComplete(boolean bSuccess, File file, KBException error);
-    }
-
-    private final static String DEFAULT_DOWN_DIRECTORY_NAME = "KBeaconFirmware";
+public class KBHttpDownload {
     private final static String DEFAULT_DOWNLOAD_WEB_ADDRESS = "https://download.kkmiot.com:8093/KBeaconFirmware/";
+    //private final static String DEFAULT_DOWNLOAD_WEB_ADDRESS = "https://api.ieasygroup.com:8092/KBeaconFirmware/";
+    private final static String DEFAULT_DOWN_DIRECTORY_NAME = "KBeaconFirmware";
 
     public final static int ERR_NETWORK_DOWN_FILE_ERROR = 0x1001;
     public final static int ERR_CREATE_DIRECTORY_FAIL = 0x1002;
 
-    private Activity mCtx;
-    private String firmwareWebAddress;
-    private String mDownloadFilePath;
+    public String downloadFilePath;
+    public String webPathAddress;
+    public Activity mCtx;
 
-    KBFirmwareDownload(Activity ctx)
+    public interface DownloadCallback {
+        void onDownloadComplete(boolean bSuccess, File file, KBException error);
+    }
+
+    private KBHttpDownload()
+    {
+
+    }
+
+    public String getDownloadFilePath() {
+        return downloadFilePath;
+    }
+
+    public String getWebPathAddress() {
+        return webPathAddress;
+    }
+
+    public KBHttpDownload(Activity ctx)
     {
         mCtx = ctx;
-        firmwareWebAddress = DEFAULT_DOWNLOAD_WEB_ADDRESS;
-        mDownloadFilePath = mCtx.getFilesDir().getPath() +  "/" + DEFAULT_DOWN_DIRECTORY_NAME + "/";
+        webPathAddress = DEFAULT_DOWNLOAD_WEB_ADDRESS;
+        downloadFilePath = mCtx.getFilesDir().getPath() +  "/" + DEFAULT_DOWN_DIRECTORY_NAME + "/";
+        makeSureFileDirectory();
+    }
+
+    public KBHttpDownload(Activity ctx, String savePath, String webPath)
+    {
+        mCtx = ctx;
+        downloadFilePath = savePath;
+        webPathAddress = webPath;
         makeSureFileDirectory();
     }
 
@@ -48,7 +64,7 @@ public class KBFirmwareDownload {
             return false;
         }
 
-        File newDir= new File(mDownloadFilePath);
+        File newDir= new File(downloadFilePath);
         if (!newDir.exists()) {
             return newDir.mkdir();
         }
@@ -56,53 +72,8 @@ public class KBFirmwareDownload {
         return true;
     }
 
-    public void downloadFirmwareInfo(String beaconModel, int nMaxDownloadTime, final DownloadFirmwareInfoCallback callback)
-    {
-        String urlStr = String.format("%s.json", beaconModel);
-        this.downLoadFile(urlStr, nMaxDownloadTime, new DownloadFirmwareDataCallback() {
-            @Override
-            public void onDownloadComplete(boolean bSuccess, File file, KBException error) {
-                final boolean bReadFileSuccess;
-                final KBException downResult;
-                HashMap<String, Object> jsonPara;
-                if (bSuccess) {
-                    String strJsonFile = Utils.ReadTxtFile(file);
-                    jsonPara = new HashMap<>(10);
-                    if (strJsonFile != null) {
-                        KBCfgBase.JsonString2HashMap(strJsonFile, jsonPara);
-                        bReadFileSuccess = true;
-                        downResult = null;
-                    } else {
-                        bReadFileSuccess = false;
-                        jsonPara = null;
-                        downResult = null;
-                    }
-                } else {
-                    bReadFileSuccess = false;
-                    downResult = error;
-                    jsonPara = null;
-                }
-                callback.onDownloadComplete(bReadFileSuccess, jsonPara, downResult);
-            }
-        });
-    }
-
-    public boolean isFirmwareFileExist(String strFirmwareFileName)
-    {
-        String strFilePath = mDownloadFilePath + strFirmwareFileName;
-        File file=new File(strFilePath);
-        return file.exists();
-    }
-
-    public File getFirmwareFile(String strFirmwareFileName)
-    {
-        String strFilePath = mDownloadFilePath + strFirmwareFileName;
-        File firmwareFile = new File(strFilePath);
-        return firmwareFile;
-    }
-
-    public void downLoadFile(final String fileName, final int timeoutMS, final DownloadFirmwareDataCallback callback) {
-        final String urlStr = String.format("%s%s", this.firmwareWebAddress, fileName);
+    public void downLoadFile(final String fileName, final int timeoutMS, final DownloadCallback callback) {
+        final String urlStr = String.format("%s%s", this.webPathAddress, fileName);
 
         new Thread(new Runnable() {
             @Override
@@ -128,7 +99,7 @@ public class KBFirmwareDownload {
 
                             //make sure the directory
                             if (makeSureFileDirectory()) {
-                                downloadFile = new File(mDownloadFilePath, strFileName);
+                                downloadFile = new File(downloadFilePath, strFileName);
                                 fileOutputStream = new FileOutputStream(downloadFile);
                                 byte[] buf = new byte[1024];
                                 int ch;

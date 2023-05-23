@@ -36,6 +36,8 @@
     <string name="unknown_service">Unknown service</string>
 
     <string name="title_activity_lock">locker</string>
+    <string name="UPDATE_NOT_FOUND_DEVICE_MODEL">Model not found</string>
+
 
 
     <!-- Menu items -->
@@ -105,7 +107,7 @@
     <string name="BEACON_MINOR">Minor:</string>
     <string name="BEACON_CONN_ENABLE">Connectable:</string>
     <string name="BEACON_TX_POWER">Tx:</string>
-    <string name="BEACON_BATTERY">Battery:</string>
+    <string name="BEACON_BATTERY">Battery percent:</string>
     <string name="BEACON_MAC_ADDRESS">Mac:</string>
     <string name="BEACON_TEMP">Temp:</string>
     <string name="BEACON_RTT">Rtt:</string>
@@ -116,6 +118,7 @@
     <string name="BEACON_ADV_TYPE">Adv Type:</string>
     <string name="BEACON_MODEL_TYPE">Model:</string>
     <string name="ADV_TYPE_IBEACON">iBeacon</string>
+    <string name="ADV_TYPE_TLM">TLM</string>
     <string name="ADV_TYPE_URL">EddyURL</string>
     <string name="ADV_TYPE_UID">EddyUID</string>
     <string name="BEACON_16_HEX">(16 Hex)</string>

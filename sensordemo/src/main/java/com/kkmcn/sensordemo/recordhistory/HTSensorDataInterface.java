@@ -1,9 +1,10 @@
 package com.kkmcn.sensordemo.recordhistory;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityRecord;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordBase;
 
 public interface HTSensorDataInterface {
 
     public int size();
 
-    public KBHumidityRecord get(int nIndex);
+    public KBRecordBase get(int nIndex);
 }

@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.1.9'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.1'
 }
 ```
 This library is also open source, please refer to this link.  
@@ -285,22 +285,22 @@ private KBeacon.ConnStateDelegate connectionDelegate = new KBeacon.ConnStateDele
 {
     public void onConnStateChange(KBeacon var1, int state, int nReason)
     {
-        if (state == KBeacon.KBStateConnected)
+        if (state == KBConnState.Connected)
         {
             Log.v(LOG_TAG, "device has connected");
             nDeviceLastState = state;
         }
-        else if (state == KBeacon.KBStateConnecting)
+        else if (state == KBConnState.Connecting)
         {
             Log.v(LOG_TAG, "device start connecting");
             nDeviceLastState = state;
         }
-        else if (state == KBeacon.KBStateDisconnecting)
+        else if (state == KBConnState.Disconnecting)
         {
             Log.v(LOG_TAG, "device start disconnecting");
             nDeviceLastState = state;
         }
-        else if (state == KBeacon.KBStateDisconnected)
+        else if (state == KBConnState.Disconnected)
         {
             if (nReason == KBConnectionEvent.ConnAuthFail) {
                 toastShow("password error");
@@ -370,8 +370,12 @@ public void updateDeviceToView()
         Log.v(LOG_TAG, "support ksensor:" + commonCfg.isSupportKBSensor());
         Log.v(LOG_TAG, "beacon has button:" + commonCfg.isSupportButton());
         Log.v(LOG_TAG, "beacon can beep:" + commonCfg.isSupportBeep());
-        Log.v(LOG_TAG, "support accleration sensor:" + commonCfg.isSupportAccSensor());
-        Log.v(LOG_TAG, "support humidify sensor:" + commonCfg.isSupportHumiditySensor());
+        Log.v(LOG_TAG, "support acceleration sensor:" + commonCfg.isSupportAccSensor());
+        Log.v(LOG_TAG, "support humidity sensor:" + commonCfg.isSupportHumiditySensor());
+        Log.v(LOG_TAG, "support PIR sensor:" + commonCfg.isSupportPIRSensor());
+        Log.v(LOG_TAG, "support CO2 sensor:" + commonCfg.isSupportCO2Sensor());
+        Log.v(LOG_TAG, "support light sensor:" + commonCfg.isSupportLightSensor());
+        Log.v(LOG_TAG, "support VOC sensor:" + commonCfg.isSupportVOCSensor());
         Log.v(LOG_TAG, "support max tx power:" + commonCfg.getMaxTxPower());
         Log.v(LOG_TAG, "support min tx power:" + commonCfg.getMinTxPower());
 
@@ -1412,6 +1416,63 @@ public void setLightSensorMeasureParameters()
 }
 ```
 
+
+#### 4.3.5.2.2 Config CO2 sensor measure parameters and log paramaters
+```Java
+//update CO2 sensor parameters
+public void setCO2SensorMeasureParameters()
+{
+    if (!mBeacon.isConnected())
+    {
+        toastShow("Device is not connected");
+        return;
+    }
+
+    //check device capability
+    KBCfgCommon oldCommonCfg = mBeacon.getCommonCfg();
+    if (oldCommonCfg != null && !oldCommonCfg.isSupportCO2Sensor())
+    {
+        toastShow("Device does not supported CO2 sensor");
+        return;
+    }
+
+    KBCfgSensorCO2 sensorCO2Para = new KBCfgSensorCO2();
+    //enable light measure log
+    sensorCO2Para.setLogEnable(true);
+
+    //unit is second, set measure interval to 120 seconds
+    sensorCO2Para.setMeasureInterval(120);
+
+    //unit is 1 ppm, if abs(current CO2 level - last saved CO2 level) > 20, then new record created
+    sensorCO2Para.setLogCO2SaveThreshold(20);
+
+    //enable sensor advertisement
+    mBeacon.modifyConfig(sensorCO2Para, (bConfigSuccess, error) -> {
+        if (bConfigSuccess)
+        {
+            toastShow("config data to beacon success");
+        }
+        else
+        {
+            toastShow("config failed for error:" + error.errorCode);
+        }
+    });
+}
+```
+
+#### 4.3.5.2.3 Other sensor paramaters
+Other sensors, such as PIR sensors and VOC sensors, have a similar method for setting parameters, and will not be given example here.
+```Java
+  //pir sensor
+  KBCfgSensorPIR pirSensor = new KBCfgSensorPIR();
+  pirSensor.setLogBackoffTime(30);
+  ...
+  
+  //voc sensor
+  KBCfgSensorVOC vocSensor = new KBCfgSensorVOC();
+  vocSensor.setMeasureInterval(40);
+  ...
+```
 ### 4.3.6 Read sensor events history records
 For some beacon devices, it can record trigger events into memory flash. Currently, the following events can be record:
 * Door open and close events
@@ -1471,31 +1532,26 @@ Example1: The app read un-read history records in KBeacon device. Each time the 
 //Read temperature and humidity history record.
 public void readTempHistoryRecordExample()
 {
-    KBHumidityDataMsg htDataMsg = new KBHumidityDataMsg();
-    htDataMsg.readSensorRecord(mBeacon,
-        INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+    mBeacon.readSensorRecord(KBSensorType.HTHumidity,
+        KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
         KBSensorReadOption.NewRecord,  //read direction type
-        100,   //max number of records the app want to read
-        new KBSensorDataMsgBase.ReadSensorCallback()
-        {
-            @Override
-            public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
+        100,   //number of records the app want to read
+            (bSuccess, dataRsp, error) -> {
                 if (bSuccess)
                 {
-                    KBHumidityDataMsg.ReadHTSensorDataRsp dataRsp = (KBHumidityDataMsg.ReadHTSensorDataRsp) obj;
-                    for (KBHumidityRecord record: dataRsp.readDataRspList)
+                    for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                     {
-                        Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
-                        Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
-                        Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
+                        KBHumidityRecord record = (KBHumidityRecord)sensorRecord;
+                        Log.v(LOG_TAG, "record utc time:" + record.utcTime);
+                        Log.v(LOG_TAG, "record temperature:" + record.temperature);
+                        Log.v(LOG_TAG, "record humidity:" + record.humidity);
                     }
-                    if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                    if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
                     {
                         Log.v(LOG_TAG, "Read data complete");
                     }
                 }
-            }
-        });
+            });
 }
 ```  
 
@@ -1503,68 +1559,80 @@ public void readTempHistoryRecordExample()
   The device has 100 records sorted by time, the app want to reading 10 records and start from the No 99. The Kbeacon will send records #99 ~ #90 to app by reverse order.     
   If the app does not known the last record no, then the value can set to INVALID_DATA_RECORD_POS.
 ```Java
- mSensorDataMsg.readSensorRecord(mBeacon,
-     INVALID_DATA_RECORD_POS,   // 99 or INVALID_DATA_RECORD_POS
-     KBSensorReadOption.ReverseOrder,
-     10,
-     new KBSensorDataMsgBase.ReadSensorCallback()
-     {
-         @Override
-         public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-             if (bConfigSuccess)
-             {
-
-               ReadHTSensorDataRsp dataRsp = (ReadHTSensorDataRsp) obj;
-
-               //the Kbeacon return records 99 ~ 80
-               for (KBHumidityRecord record: dataRsp.readDataRspList)
+//reverse read record example
+private long mLastReadReverseIndex = KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS;
+private int readIndex = 0;
+public void readTempHistoryRecordReverseExample()
+{
+   mBeacon.readSensorRecord(KBSensorType.HTHumidity,
+           mLastReadReverseIndex, //read from last pos
+           KBSensorReadOption.ReverseOrder,  //read direction type
+           50,   //number of records the app want to read
+           (bSuccess, dataRsp, error) -> {
+               if (bSuccess)
                {
-                   Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
-                   Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
-                   Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
+                   mLastReadReverseIndex = dataRsp.readDataNextPos;
+                   for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
+                   {
+                       KBHumidityRecord record = (KBHumidityRecord)sensorRecord;
+                       Log.v(LOG_TAG, readIndex
+                               +": utc time:" + record.utcTime
+                               + ",temperature:" + record.temperature
+                               + ",humidity:" + record.humidity);
+                       readIndex++;
+                   }
+                   if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                   {
+                       Log.v(LOG_TAG, "Read data complete");
+                   }
+                   else
+                   {
+                       Log.v(LOG_TAG, "next read position:" + dataRsp.readDataNextPos);
+                   }
                }
-
-               if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
-               {
-                   Log.v(LOG_TAG, "Read data complete");
-               }
-           }
-         }
-     }
-);
+           });
+}
 ```  
 
  Example3: The app read the temperature and humidity records without moving pointer.
  The device has 100 records sorted by time, the app want to reading 20 records and start from No 10. The Kbeacon will send records #10 ~ #29 to app.  
 ```Java
- mSensorDataMsg.readSensorRecord(mBeacon,
-     10,  //start read record no
-     KBSensorReadOption.NormalOrder,   //read direction, from oldes to recent
-     20,  //max read records number
-     new KBSensorDataMsgBase.ReadSensorCallback()
-     {
-         @Override
-         public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
-             if (bConfigSuccess)
-             {
-               ReadHTSensorDataRsp dataRsp = (ReadHTSensorDataRsp) obj;
-
-               //the Kbeacon return records 10 ~ 29
-               for (KBHumidityRecord record: dataRsp.readDataRspList)
-               {
-                   Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
-                   Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
-                   Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
-               }
-
-               if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
-               {
-                   Log.v(LOG_TAG, "Read data complete");
-               }
-           }
-         }
-     }
-);
+private long mNextReadNormalIndex = 0;
+private int mTotalReadNormalIndex = 0;
+public void readTempHistoryRecordNormalExample()
+{
+    mBeacon.readSensorRecord(KBSensorType.HTHumidity,
+            mNextReadNormalIndex, //read from last pos
+            KBSensorReadOption.NormalOrder,  //read direction type
+            50,   //number of records the app want to read
+            (bSuccess, dataRsp, error) -> {
+                if (bSuccess)
+                {
+                    mNextReadNormalIndex = dataRsp.readDataNextPos;
+                    for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
+                    {
+                        KBHumidityRecord record = (KBHumidityRecord)sensorRecord;
+                        Log.v(LOG_TAG, mTotalReadNormalIndex
+                                +": utc time:" + record.utcTime
+                                + ",temperature:" + record.temperature
+                                + ",humidity:" + record.humidity);
+                        mTotalReadNormalIndex++;
+                    }
+                    if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                    {
+                        Log.v(LOG_TAG, "Read data complete");
+                    }
+                    else
+                    {
+                        Log.v(LOG_TAG, "next read position:" + dataRsp.readDataNextPos);
+                    }
+                }
+                else
+                {
+                    Log.e(LOG_TAG, "read data failed:" + error.errorCode);
+                }
+            });
+}
 ```
 
 #### 4.3.6.3 Read sensor events records example
@@ -1572,27 +1640,22 @@ public void readTempHistoryRecordExample()
 //example1: read door cutoff history records
 public void readCutoffHistoryRecordExample()
 {
-    KBCutoffDataMsg cutoffDataMsg = new KBCutoffDataMsg();
-    cutoffDataMsg.readSensorRecord(mBeacon,
-            INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+    mBeacon.readSensorRecord(KBSensorType.Cutoff,
+            KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
             KBSensorReadOption.NewRecord,  //read direction type
             100,   //number of records the app want to read
-            new KBSensorDataMsgBase.ReadSensorCallback()
-            {
-                @Override
-                public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
-                    if (bSuccess)
+            (bSuccess, dataRsp, error) -> {
+                if (bSuccess)
+                {
+                    for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                     {
-                        KBCutoffDataMsg.ReadDoorSensorDataRsp dataRsp = (KBCutoffDataMsg.ReadDoorSensorDataRsp) obj;
-                        for (KBCutoffRecord record: dataRsp.readDataRspList)
-                        {
-                            Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
-                            Log.v(LOG_TAG, "record cut off Flag:" + record.mCutoffFlag);
-                        }
-                        if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
-                        {
-                            Log.v(LOG_TAG, "Read data complete");
-                        }
+                        KBCutoffRecord record = (KBCutoffRecord)sensorRecord;
+                        Log.v(LOG_TAG, "record utc time:" + record.utcTime);
+                        Log.v(LOG_TAG, "record cut off Flag:" + record.cutoffFlag);
+                    }
+                    if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                    {
+                        Log.v(LOG_TAG, "Read data complete");
                     }
                 }
             });
@@ -1601,59 +1664,73 @@ public void readCutoffHistoryRecordExample()
 //example2: read door PIR history records
 public void readPIRHistoryRecordExample()
 {
-    KBPIRDataMsg pirDataMsg = new KBPIRDataMsg();
-    pirDataMsg.readSensorRecord(mBeacon,
-            INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+    mBeacon.readSensorRecord(KBSensorType.PIR,
+            KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
             KBSensorReadOption.NewRecord,  //read direction type
             100,   //number of records the app want to read
-            new KBSensorDataMsgBase.ReadSensorCallback()
-            {
-                @Override
-                public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
-                    if (bSuccess)
+            (bSuccess, dataRsp, error) -> {
+                if (bSuccess)
+                {
+                    for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                     {
-                        KBPIRDataMsg.ReadPIRSensorDataRsp dataRsp = (KBPIRDataMsg.ReadPIRSensorDataRsp) obj;
-                        for (KBPIRRecord record: dataRsp.readDataRspList)
-                        {
-                            Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
-                            Log.v(LOG_TAG, "record pir indication:" + record.mPirIndication);
-                        }
-                        if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
-                        {
-                            Log.v(LOG_TAG, "Read data complete");
-                        }
+                        KBPIRRecord record = (KBPIRRecord)sensorRecord;
+                        Log.v(LOG_TAG, "record utc time:" + record.utcTime);
+                        Log.v(LOG_TAG, "record pir indication:" + record.pirIndication);
+                    }
+                    if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                    {
+                        Log.v(LOG_TAG, "Read data complete");
                     }
                 }
             });
 }
 
-//Exampe3: read light sensor history records
+//Example3: read light sensor history records
 public void readLightHistoryRecordExample()
 {
-  KBLightDataMsg lightDataMsg = new KBLightDataMsg();
-  lightDataMsg.readSensorRecord(mBeacon,
-          INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
-          KBSensorReadOption.NewRecord,  //read direction type
-          100,   //number of records the app want to read
-          new KBSensorDataMsgBase.ReadSensorCallback()
-          {
-              @Override
-              public void onReadComplete(boolean bSuccess,  Object obj, KBException error) {
-                  if (bSuccess)
-                  {
-                      KBLightDataMsg.ReadLightSensorDataRsp dataRsp = (KBLightDataMsg.ReadLightSensorDataRsp) obj;
-                      for (KBLightRecord record: dataRsp.readDataRspList)
-                      {
-                          Log.v(LOG_TAG, "Light utc time:" + record.mUtcTime);
-                          Log.v(LOG_TAG, "Light level:" + record.mLightLevel);
-                      }
-                      if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
-                      {
-                          Log.v(LOG_TAG, "Read data complete");
-                      }
-                  }
-              }
-          });
+    mBeacon.readSensorRecord(KBSensorType.Light,
+            KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+            KBSensorReadOption.NewRecord,  //read direction type
+            100,   //number of records the app want to read
+            (bConfigSuccess, dataRsp, error) -> {
+                if (bConfigSuccess)
+                {
+                    for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
+                    {
+                        KBLightRecord record = (KBLightRecord)sensorRecord;
+                        Log.v(LOG_TAG, "Light utc time:" + record.utcTime);
+                        Log.v(LOG_TAG, "Light level:" + record.lightLevel);
+                    }
+                    if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                    {
+                        Log.v(LOG_TAG, "Read data complete");
+                    }
+                }
+            });
+}
+
+//Example4: read VOC sensor history records
+public void readVOCHistoryRecordExample()
+{
+   mBeacon.readSensorRecord(KBSensorType.Light,
+           KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+           KBSensorReadOption.NewRecord,  //read direction type
+           100,   //number of records the app want to read
+           (bConfigSuccess, dataRsp, error) -> {
+               if (bConfigSuccess)
+               {
+                   for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
+                   {
+                       KBVOCRecord record = (KBVOCRecord)sensorRecord;
+                       Log.v(LOG_TAG, "Light utc time:" + record.utcTime);
+                       Log.v(LOG_TAG, "VOC index:" + record.vocIndex);
+                   }
+                   if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                   {
+                       Log.v(LOG_TAG, "Read data complete");
+                   }
+               }
+           });
 }
 ```
 
@@ -1669,33 +1746,40 @@ All command message between app and KBeacon are JSON format. Our SDK provide Has
  * ledOff: optional parameters, unit is ms. the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x1.  
 
   ```Java
- public void ringDevice() {
-        if (!mBeacon.isConnected()) {
-            return;
-        }
+public void ringDevice() {
+    if (!mBeacon.isConnected()) {
+        return;
+    }
 
-        mDownloadButton.setEnabled(false);
-        HashMap<String, Object> cmdPara = new HashMap<>(5);
+    JSONObject cmdPara = new JSONObject();
+    try {
         cmdPara.put("msg", "ring");
         cmdPara.put("ringTime", 20000);   //ring times, uint is ms
-        cmdPara.put("ringType", 2);  //0x1:beep alert only; 0x2 led flash;
+        cmdPara.put("ringType", 0x1);  //0x0:led flash only; 0x1:beep alert only;
         cmdPara.put("ledOn", 200);   //valid when ringType set to 0x0 or 0x2
         cmdPara.put("ledOff", 1800); //valid when ringType set to 0x0 or 0x2
-        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
-            @Override
-            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                mDownloadButton.setEnabled(true);
-                if (bConfigSuccess)
-                {
-                    toastShow("send command to beacon success");
-                }
-                else
-                {
-                    toastShow("send command to beacon error:" + error.errorCode);
-                }
-            }
-        });
     }
+    catch (JSONException exception)
+    {
+        exception.printStackTrace();
+        return;
+    }
+    mRingButton.setEnabled(false);
+    mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+        @Override
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            mDownloadButton.setEnabled(true);
+            if (bConfigSuccess)
+            {
+                toastShow("send command to beacon success");
+            }
+            else
+            {
+                toastShow("send command to beacon error:" + error.errorCode);
+            }
+        }
+    });
+}
 ```
 
 #### 4.3.7.2 Power off device
@@ -1704,26 +1788,34 @@ All command message between app and KBeacon are JSON format. Our SDK provide Has
 
  ```Java
 public void powerOffDevice() {
-    if (!mBeacon.isConnected()) {
-        return;
-    }
+   if (!mBeacon.isConnected()) {
+       return;
+   }
 
-    HashMap<String, Object> cmdPara = new HashMap<>(5);
-    cmdPara.put("msg", "admin");
-    cmdPara.put("stype", "pwroff");
-    mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
-        @Override
-        public void onActionComplete(boolean bConfigSuccess, KBException error) {
-            if (bConfigSuccess)
-            {
-                toastShow("send power off command to beacon success");
-            }
-            else
-            {
-                toastShow("send pwer pff command to beacon error:" + error.errorCode);
-            }
-        }
-    });
+   JSONObject cmdPara = new JSONObject();
+   try {
+       cmdPara.put("msg", "admin");
+       cmdPara.put("stype", "pwroff");
+   }
+   catch (JSONException except)
+   {
+       except.printStackTrace();
+       return;
+   }
+
+   mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+       @Override
+       public void onActionComplete(boolean bConfigSuccess, KBException error) {
+           if (bConfigSuccess)
+           {
+               toastShow("send power off command to beacon success");
+           }
+           else
+           {
+               toastShow("send power pff command to beacon error:" + error.errorCode);
+           }
+       }
+   });
 }
 ```
 
@@ -1732,30 +1824,38 @@ public void powerOffDevice() {
  * msg: message type is 'reset'
 
  ```Java
-    public void resetParameters() {
-        if (!mBeacon.isConnected()) {
-            return;
-        }
+public void resetParameters() {
+   if (!mBeacon.isConnected()) {
+       return;
+   }
 
-        HashMap<String, Object> cmdPara = new HashMap<>(5);
-        cmdPara.put("msg", "admin");
-        cmdPara.put("stype", "reset");
-        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
-            @Override
-            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                if (bConfigSuccess)
-                {
-                    //disconnect with device to make sure the new parameters take effect
-                    mBeacon.disconnect();
-                    toastShow("send reset command to beacon success");
-                }
-                else
-                {
-                    toastShow("send reset command to beacon error:" + error.errorCode);
-                }
-            }
-        });
-    }
+   JSONObject cmdPara = new JSONObject();
+   try {
+       cmdPara.put("msg", "admin");
+       cmdPara.put("stype", "reset");
+   }
+   catch (JSONException except)
+   {
+       except.printStackTrace();
+       return;
+   }
+
+   mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+       @Override
+       public void onActionComplete(boolean bConfigSuccess, KBException error) {
+           if (bConfigSuccess)
+           {
+               //disconnect with device to make sure the new parameters take effect
+               mBeacon.disconnect();
+               toastShow("send reset command to beacon success");
+           }
+           else
+           {
+               toastShow("send reset command to beacon error:" + error.errorCode);
+           }
+       }
+   });
+}
 ```
 
 ### 4.3.8 Error cause in configurations/command
@@ -1857,8 +1957,10 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
-*  2022.6.5 V1.6 Add PIR trigger
-*  2021.8.20 V1.51 Add cutoff trigger
+*  2023.5.20 V1.8 Add VOC and CO2 sensor
+*  2022.11.30 V1.7 Add Light sensor
+*  2022.6.5 V1.6 Add PIR sensor
+*  2021.8.20 V1.51 Add cutoff sensor
 *  2021.6.20 V1.41 Support slot mode advertisement
 *  2021.1.30 V1.31 Support button and motion trigger event in connected state
 * 2020.11.11 v1.30 Support temperature and humidity sensor. Remove AAR library, please download library from JCenter.

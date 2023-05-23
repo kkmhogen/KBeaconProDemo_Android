@@ -15,7 +15,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.kbeacon.ibeacondemo.dfulibrary.KBeaconDFUActivity;
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvType;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBAdvMode;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBAdvTxPower;
@@ -43,6 +42,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import androidx.core.app.ActivityCompat;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class DevicePannelActivity extends AppBaseActivity implements View.OnClickListener, KBeacon.ConnStateDelegate{
 
@@ -103,7 +105,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         mResetButton = (Button) findViewById(R.id.resetConfigruation);
         mResetButton.setOnClickListener(this);
-        findViewById(R.id.dfuDevice).setOnClickListener(this);
         findViewById(R.id.beacon2TLM).setOnClickListener(this);
     }
 
@@ -144,14 +145,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     public void onClick(View v)
     {
         switch (v.getId()) {
-            case R.id.dfuDevice:
-                if (mBeacon.isConnected()) {
-                    final Intent intent = new Intent(this, KBeaconDFUActivity.class);
-                    intent.putExtra(KBeaconDFUActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());
-                    startActivityForResult(intent, 1);
-                }
-                break;
-
             case R.id.buttonSaveData:
                 updateViewToDevice();
                 break;
@@ -715,9 +708,15 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
 
         mDownloadButton.setEnabled(false);
-        HashMap<String, Object> cmdPara = new HashMap<>(5);
-        cmdPara.put("msg", "admin");
-        cmdPara.put("stype", "reset");
+        JSONObject cmdPara = new JSONObject();
+        try {
+            cmdPara.put("msg", "admin");
+            cmdPara.put("stype", "reset");
+        }catch (JSONException except)
+        {
+            except.printStackTrace();
+            return;
+        }
         mResetButton.setEnabled(false);
         mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
             @Override
@@ -751,11 +750,15 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             Log.v(LOG_TAG, "support ksensor:" + commonCfg.isSupportKBSensor());
             Log.v(LOG_TAG, "beacon has button:" + commonCfg.isSupportButton());
             Log.v(LOG_TAG, "beacon can beep:" + commonCfg.isSupportBeep());
-            Log.v(LOG_TAG, "support accleration sensor:" + commonCfg.isSupportAccSensor());
-            Log.v(LOG_TAG, "support humidify sensor:" + commonCfg.isSupportHumiditySensor());
+            Log.v(LOG_TAG, "support acceleration sensor:" + commonCfg.isSupportAccSensor());
+            Log.v(LOG_TAG, "support humidity sensor:" + commonCfg.isSupportHumiditySensor());
+            Log.v(LOG_TAG, "support PIR sensor:" + commonCfg.isSupportPIRSensor());
+            Log.v(LOG_TAG, "support CO2 sensor:" + commonCfg.isSupportCO2Sensor());
+            Log.v(LOG_TAG, "support light sensor:" + commonCfg.isSupportLightSensor());
+            Log.v(LOG_TAG, "support VOC sensor:" + commonCfg.isSupportVOCSensor());
             Log.v(LOG_TAG, "support max tx power:" + commonCfg.getMaxTxPower());
             Log.v(LOG_TAG, "support min tx power:" + commonCfg.getMinTxPower());
-            Log.v(LOG_TAG, "device battery:" + commonCfg.getBattery());
+            Log.v(LOG_TAG, "device battery:" + commonCfg.getBatteryPercent());
 
             //slot adv type list
             ArrayList<KBCfgAdvBase> advArrays = mBeacon.getSlotCfgList();

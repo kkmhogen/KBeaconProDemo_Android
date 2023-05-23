@@ -219,8 +219,7 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
         }
         else
         {
-            firmwareDownload.downLoadFile(mDestFirmwareFileName,
-                    50 * 1000,
+            firmwareDownload.downloadFirmwareData(mDestFirmwareFileName,
                     new KBFirmwareDownload.DownloadFirmwareDataCallback() {
                         @Override
                         public void onDownloadComplete(boolean bSuccess, File file, KBException error) {
@@ -306,9 +305,13 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
         mUpdateNotesLabel.setText(R.string.DEVICE_CHECK_UPDATE);
 
         final KBCfgCommon cfgCommon = (KBCfgCommon) mBeacon.getCommonCfg();
+        if (cfgCommon == null){
+            dfuComplete(getString(R.string.UPDATE_NOT_FOUND_DEVICE_MODEL));
+            return;
+        }
         firmwareDownload.downloadFirmwareInfo(cfgCommon.getModel(), 10* 1000, new KBFirmwareDownload.DownloadFirmwareInfoCallback() {
             @Override
-            public void onDownloadComplete(boolean bSuccess, HashMap<String, Object> firmwareInfo, KBException error) {
+            public void onDownloadComplete(boolean bSuccess, JSONObject firmwareInfo, KBException error) {
                 if (mProgressDialog.isShowing()){
                     mProgressDialog.hide();
                 }
@@ -320,7 +323,19 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
                         return;
                     }
 
-                    JSONArray firmwareVerList = (JSONArray)firmwareInfo.get(mBeacon.hardwareVersion());
+                    if (!firmwareInfo.has(mBeacon.hardwareVersion()))
+                    {
+                        dfuComplete(getString(R.string.NB_network_file_not_exist));
+                        return;
+                    }
+
+                    //check if json file valid
+                    JSONArray firmwareVerList = null;
+                    try {
+                        firmwareVerList = firmwareInfo.getJSONArray(mBeacon.hardwareVersion());
+                    }catch (JSONException except){
+                        except.printStackTrace();
+                    }
                     if (firmwareVerList == null){
                         dfuComplete(getString(R.string.NB_network_file_not_exist));
                         return;
@@ -333,6 +348,43 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
                         try
                         {
                             object = (JSONObject)firmwareVerList.get(i);
+                            if (!object.has("appVersion"))
+                            {
+                                dfuComplete(getString(R.string.NB_network_cloud_server_error));
+                                return;
+                            }
+
+                            String destVersion = (String) object.getString("appVersion");
+                            String remoteVerDigital = destVersion.substring(1);
+                            if (Float.parseFloat(currVerDigital) < Float.parseFloat(remoteVerDigital)) {
+                                if (!object.has("appFileName"))
+                                {
+                                    dfuComplete(getString(R.string.NB_network_cloud_server_error));
+                                    return;
+                                }
+                                String appFileName = (String) object.get("appFileName");
+
+                                //check notes
+                                if (object.has("note"))
+                                {
+                                    versionNotes.append(object.getString("note"));
+                                    versionNotes.append("\n");
+                                }
+
+                                if (i == firmwareVerList.length() - 1)
+                                {
+                                    mDestFirmwareFileName = appFileName;
+
+                                    //found new version
+                                    mUpdateStatusLabel.setText(R.string.UPDATE_FOUND_NEW_VERSION);
+                                    mNewVersionLabel.setText(destVersion);
+                                    mUpdateNotesLabel.setText(versionNotes.toString());
+                                    mFoundNewVersion = true;
+                                    String strDesc = String.format(getString(R.string.DFU_FOUND_NEW_VERSION), destVersion);
+                                    toastShow(strDesc);
+                                    return;
+                                }
+                            }
                         }
                         catch (JSONException excpt)
                         {
@@ -340,59 +392,11 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
                             dfuComplete(getString(R.string.NB_network_cloud_server_error));
                             return;
                         }
-
-                        HashMap<String, Object> verInfo = new HashMap<>(10);
-                        KBCfgBase.JsonObject2HashMap(object, verInfo);
-                        String destVersion = (String) verInfo.get("appVersion");
-                        if (destVersion == null)
-                        {
-                            dfuComplete(getString(R.string.NB_network_cloud_server_error));
-                            return;
-                        }
-
-                        String remoteVerDigital = destVersion.substring(1);
-                        if (Float.valueOf(currVerDigital) < Float.valueOf(remoteVerDigital)) {
-
-                            String appFileName = (String) verInfo.get("appFileName");
-                            if (appFileName == null)
-                            {
-                                dfuComplete(getString(R.string.NB_network_cloud_server_error));
-                                return;
-                            }
-
-                            String releaseNotes = (String) verInfo.get("note");
-                            if (releaseNotes != null)
-                            {
-                                versionNotes.append(releaseNotes);
-                                versionNotes.append("\n");
-                            }
-
-                            if (i == firmwareVerList.length() - 1)
-                            {
-                                mDestFirmwareFileName = appFileName;
-
-                                //found new version
-                                mUpdateStatusLabel.setText(R.string.UPDATE_FOUND_NEW_VERSION);
-                                mNewVersionLabel.setText(destVersion);
-                                mUpdateNotesLabel.setText(versionNotes.toString());
-                                mFoundNewVersion = true;
-                                String strDesc = String.format(getString(R.string.DFU_FOUND_NEW_VERSION), destVersion);
-                                toastShow(strDesc);
-                                return;
-                            }
-                        }
                     }
                     dfuComplete(getString(R.string.DEVICE_LATEST_VERSION));
                 }
                 else{
-                    if (error.errorCode == KBFirmwareDownload.ERR_NETWORK_DOWN_FILE_ERROR)
-                    {
-                        dfuComplete(getString(R.string.UPDATE_NETWORK_FAIL) + error.getMessage());
-                    }
-                    else
-                    {
-                        dfuComplete(error.getMessage());
-                    }
+                    dfuComplete(getString(R.string.UPDATE_NETWORK_FAIL) + error.getMessage());
                 }
             }
         });

@@ -114,7 +114,7 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
             return;
         }
         mBeaconsMgr.delegate = this;
-        mBeaconsMgr.setScanMinRssiFilter(-80);
+        //mBeaconsMgr.setScanMinRssiFilter(-90);
         mBeaconsMgr.setScanMode(KBeaconsMgr.SCAN_MODE_LOW_LATENCY);
         mBeaconsMgr.setScanAdvTypeFilter(KBAdvType.EddyTLM | KBAdvType.Sensor | KBAdvType.IBeacon);
 
