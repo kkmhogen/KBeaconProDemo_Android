@@ -285,22 +285,22 @@ private KBeacon.ConnStateDelegate connectionDelegate = new KBeacon.ConnStateDele
 {
     public void onConnStateChange(KBeacon var1, int state, int nReason)
     {
-        if (state == KBeacon.KBStateConnected)
+        if (state == KBConnState.Connected)
         {
             Log.v(LOG_TAG, "device has connected");
             nDeviceLastState = state;
         }
-        else if (state == KBeacon.KBStateConnecting)
+        else if (state == KBConnState.Connecting)
         {
             Log.v(LOG_TAG, "device start connecting");
             nDeviceLastState = state;
         }
-        else if (state == KBeacon.KBStateDisconnecting)
+        else if (state == KBConnState.Disconnecting)
         {
             Log.v(LOG_TAG, "device start disconnecting");
             nDeviceLastState = state;
         }
-        else if (state == KBeacon.KBStateDisconnected)
+        else if (state == KBConnState.Disconnected)
         {
             if (nReason == KBConnectionEvent.ConnAuthFail) {
                 toastShow("password error");
