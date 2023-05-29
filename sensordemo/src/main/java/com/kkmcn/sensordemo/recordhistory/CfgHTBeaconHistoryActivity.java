@@ -19,13 +19,12 @@ import android.widget.ListView;
 
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBSensorType;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordBase;
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadInfoRsp;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordDataRsp;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordHumidity;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadOption;
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadRecordRsp;
 import com.kkmcn.sensordemo.AppBaseActivity;
 import com.kkmcn.sensordemo.R;
 import com.kkmcn.kbeaconlib2.KBException;
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityRecord;
 import com.kkmcn.kbeaconlib2.KBeacon;
 import com.kkmcn.kbeaconlib2.KBeaconsMgr;
 import com.kkmcn.kbeaconlib2.UTCTime;
@@ -215,7 +214,7 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
         mIsLoading = true;
 
         mBeacon.readSensorRecord(KBSensorType.HTHumidity,
-                KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS,
+                KBRecordDataRsp.INVALID_DATA_RECORD_POS,
                 KBSensorReadOption.NewRecord,
                 100,
                 (bConfigSuccess, dataRsp, error) -> {
@@ -227,13 +226,13 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
 
                     for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                     {
-                        KBHumidityRecord record = (KBHumidityRecord)sensorRecord;
+                        KBRecordHumidity record = (KBRecordHumidity)sensorRecord;
                         Log.v(LOG_TAG, "record utc time:" + record.utcTime);
                         Log.v(LOG_TAG, "record temperature:" + record.temperature);
                         Log.v(LOG_TAG, "record humidity:" + record.humidity);
                     }
 
-                    if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                    if (dataRsp.readDataNextPos == KBRecordDataRsp.INVALID_DATA_RECORD_POS)
                     {
                         Log.v(LOG_TAG, "Read data complete");
                     }
@@ -241,7 +240,7 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
                     mRecordFileMgr.appendRecord(dataRsp.readDataRspList);
                     int nReadDataNum = dataRsp.readDataRspList.size();
                     mReadDataNextMsgID = dataRsp.readDataNextPos;
-                    if (mReadDataNextMsgID == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)
+                    if (mReadDataNextMsgID == KBRecordDataRsp.INVALID_DATA_RECORD_POS)
                     {
                         Message msg = mHandler.obtainMessage(MSG_LOAD_NO_MORE_DATA);
                         msg.arg1 = nReadDataNum;

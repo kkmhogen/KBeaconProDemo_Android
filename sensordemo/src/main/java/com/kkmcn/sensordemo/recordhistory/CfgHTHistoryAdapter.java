@@ -8,8 +8,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordHumidity;
 import com.kkmcn.sensordemo.R;
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityRecord;
 
 import java.text.SimpleDateFormat;
 
@@ -66,7 +66,7 @@ public class CfgHTHistoryAdapter extends BaseAdapter {
             view = convertView;
             holder = (ViewHolder) view.getTag();
         }
-        KBHumidityRecord nbRecord = (KBHumidityRecord)mSensorData.get(position);
+        KBRecordHumidity nbRecord = (KBRecordHumidity)mSensorData.get(position);
         String strNearbyUtcTime = mRecordTimeFormat.format(nbRecord.utcTime * 1000);
         holder.textViewUTCTime.setText(strNearbyUtcTime);
 

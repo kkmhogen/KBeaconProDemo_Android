@@ -2,9 +2,8 @@ package com.kkmcn.sensordemo.recordhistory;
 
 import android.content.Context;
 import android.util.Log;
-
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBHumidityRecord;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordBase;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordHumidity;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -67,7 +66,7 @@ public class CfgHTRecordFileMgr implements HTSensorDataInterface {
                 {
                     continue;
                 }
-                KBHumidityRecord record = new KBHumidityRecord();
+                KBRecordHumidity record = new KBRecordHumidity();
                 try {
                     record.utcTime = Long.valueOf(strRecordArray[0]);
                     record.temperature = Float.valueOf(strRecordArray[1]);
@@ -114,7 +113,7 @@ public class CfgHTRecordFileMgr implements HTSensorDataInterface {
             BufferedWriter bufWriter = new BufferedWriter(filerWriter);
 
             for (KBRecordBase sensorRecord : recordList) {
-                KBHumidityRecord record = (KBHumidityRecord)sensorRecord;
+                KBRecordHumidity record = (KBRecordHumidity)sensorRecord;
                 String recordLine = "" + record.utcTime + "\t"
                         + record.temperature + "\t"
                         + record.humidity + "\n";
@@ -129,7 +128,7 @@ public class CfgHTRecordFileMgr implements HTSensorDataInterface {
         }
     }
 
-    public void appendRecord(KBHumidityRecord record)
+    public void appendRecord(KBRecordHumidity record)
     {
         mMovingRecordList.add(record);
 
@@ -179,7 +178,7 @@ public class CfgHTRecordFileMgr implements HTSensorDataInterface {
 
             for (int i = 0; i < mMovingRecordList.size(); i++)
             {
-                KBHumidityRecord historyData = (KBHumidityRecord)mMovingRecordList.get(i);
+                KBRecordHumidity historyData = (KBRecordHumidity)mMovingRecordList.get(i);
 
                 String strNearbyUtcTime = mRecordTimeFormat.format(historyData.utcTime * 1000);
                 String strWriteLine =
@@ -215,7 +214,7 @@ public class CfgHTRecordFileMgr implements HTSensorDataInterface {
 
         for (int i = 0; i < mMovingRecordList.size(); i++)
         {
-            KBHumidityRecord historyData = (KBHumidityRecord)mMovingRecordList.get(i);
+            KBRecordHumidity historyData = (KBRecordHumidity)mMovingRecordList.get(i);
 
             String strNearbyUtcTime = mRecordTimeFormat.format(historyData.utcTime * 1000);
             strWriteLine = strNearbyUtcTime + "\t" +
