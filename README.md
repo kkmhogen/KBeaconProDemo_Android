@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.2'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.1'
 }
 ```
 This library is also open source, please refer to this link.  
@@ -1254,15 +1254,15 @@ public void enableLightTrigger() {
     }
 
     //enable light trigger
-    KBCfgTrigger lightTriggerPara = new KBCfgTrigger(0, KBTriggerType.LightLUXAbove);
+    KBCfgTrigger pirTriggerPara = new KBCfgTrigger(0, KBTriggerType.LightLUXAbove);
 
     //Save the Light event to memory flash and report it to the APP at the same time
-    lightTriggerPara.setTriggerAction(KBTriggerAction.Record | KBTriggerAction.Report2App);
+    pirTriggerPara.setTriggerAction(KBTriggerAction.Record | KBTriggerAction.Report2App);
 
     //If light level > 500 lx, then record the event and report event to app
-    lightTriggerPara.setTriggerPara(500);
+    pirTriggerPara.setTriggerPara(500);
 
-    this.mBeacon.modifyConfig(lightTriggerPara, new KBeacon.ActionCallback() {
+    this.mBeacon.modifyConfig(pirTriggerPara, new KBeacon.ActionCallback() {
         public void onActionComplete(boolean bConfigSuccess, KBException error) {
             if (bConfigSuccess) {
                 toastShow("enable light trigger success");
@@ -1275,51 +1275,10 @@ public void enableLightTrigger() {
 ```
 
 #### 4.3.5 Sensor parameters
-If the device has sensors, such as temperature and humidity sensors, we may need to setting the sensor parameters, such as the measurement interval.
+If the device has sensors, such as temperature and humidity sensors, we may need to setting the sensor parameters, such as the measurement interval.  
+There are also some beacons, which can save sensor events to non-volatile memory, so that the app or gateway can obtain these historical records. Therefore, we may need to configure the conditions for recording events, such as recording an event when the temperature changes by more than 3 degrees.
 
-#### 4.3.5.1 Config disable period paramaters
-For some sensors, we may not want it to work all the time, such as the Door sensor, we may only want it to work at night. The advantage of this is, the power consumption can be reduced, and the unnecessary trigger can also be reduced.
-The sensors that support configuring a disable period include: Door sensor(S1), PIR sensor(S2).
-```Java
-//set disable period parameters
-public void setPIRDisablePeriod() {
-   if (!mBeacon.isConnected()) {
-       toastShow("Device is not connected");
-       return;
-   }
-
-   //check device capability
-   final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
-   if (oldCommonCfg != null && !oldCommonCfg.isSupportPIRSensor())
-   {
-       toastShow("device does not support PIR sensor");
-       return;
-   }
-
-   KBCfgSensorBase sensorPara = new KBCfgSensorBase();
-   sensorPara.setSensorType(KBSensorType.PIR);
-
-   //set disable period from 8:00AM to 20:00 PM
-   KBTimeRange disablePeriod = new KBTimeRange();
-   disablePeriod.localStartHour = 8;
-   disablePeriod.localStartMinute = 0;
-   disablePeriod.localEndHour = 20;
-   disablePeriod.localEndMinute = 0;
-   sensorPara.setDisablePeriod0(disablePeriod);
-
-   this.mBeacon.modifyConfig(sensorPara, new KBeacon.ActionCallback() {
-       public void onActionComplete(boolean bConfigSuccess, KBException error) {
-           if (bConfigSuccess) {
-               toastShow("Modify para success");
-           } else {
-               toastShow("Modify para error:" + error.errorCode);
-           }
-       }
-   });
-}
-```
-
-#### 4.3.5.2 Config temperature and humidity measure parameters and log paramaters
+#### 4.3.5.1 Config temperature and humidity paramaters
 For temperature and humidity sensors, we can set the measurement interval. In addition, we can use the device as a Logger, and we can set the log conditions.
 ```Java
 public void setTHSensorMeasureParameters()
@@ -1369,7 +1328,7 @@ public void setTHSensorMeasureParameters()
 }
 ```
 
-#### 4.3.5.2.1 Config light sensor measure parameters and log paramaters
+#### 4.3.5.2 Config light sensor paramaters
 For light sensors, we can set the measurement interval. In addition, we can use the device as a Logger, and we can set the log conditions.
 ```Java
 //set light sensor measure parameters
@@ -1416,7 +1375,51 @@ public void setLightSensorMeasureParameters()
 }
 ```
 
-#### 4.3.5.2.3 Other sensor paramaters
+#### 4.3.5.3 Config disable period paramaters
+For some sensors, we may not want it to work all the time, such as the Door sensor, we may only want it to work at night. The advantage of this is, the power consumption can be reduced, and the unnecessary trigger can also be reduced.
+The sensors model that support configuring a disable period include: S1(Door sensor), S2(PIR sensor).
+
+```Java
+//set door sensor(S1) disable period parameters
+public void setDoorDisablePeriod() {
+    if (!mBeacon.isConnected()) {
+        toastShow("Device is not connected");
+        return;
+    }
+
+    //check device capability
+    final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
+    if (oldCommonCfg != null && !oldCommonCfg.isSupportCutoffSensor())
+    {
+        toastShow("device does not support door cutoff sensor");
+        return;
+    }
+
+    //enable PIR trigger
+    KBCfgSensorBase sensorPara = new KBCfgSensorBase();
+    sensorPara.setSensorType(KBSensorType.Cutoff);
+
+    //sensor enable period
+    KBTimeRange disablePeriod = new KBTimeRange();
+    disablePeriod.localStartHour = 8;
+    disablePeriod.localStartMinute = 0;
+    disablePeriod.localEndHour = 20;
+    disablePeriod.localEndMinute = 0;
+    sensorPara.setDisablePeriod0(disablePeriod);
+
+    this.mBeacon.modifyConfig(sensorPara, new KBeacon.ActionCallback() {
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess) {
+                toastShow("Modify para success");
+            } else {
+                toastShow("Modify para error:" + error.errorCode);
+            }
+        }
+    });
+}
+```
+
+#### 4.3.5.4 Other sensor paramaters
 Other sensors, such as PIR sensors and VOC sensors, have a similar method for setting parameters, and will not be given example here.
 ```Java
   //pir sensor
@@ -1429,6 +1432,7 @@ Other sensors, such as PIR sensors and VOC sensors, have a similar method for se
   vocSensor.setMeasureInterval(40);
   ...
 ```
+
 ### 4.3.6 Read sensor events history records
 For some beacon devices, it can record trigger events into memory flash. Currently, the following events can be record:
 * Door open and close events
@@ -1582,7 +1586,7 @@ public void readTempHistoryRecordNormalExample()
 public void readCutoffHistoryRecordExample()
 {
     mBeacon.readSensorRecord(KBSensorType.Cutoff,
-            KBRecordDataRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+            KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
             KBSensorReadOption.NewRecord,  //read direction type
             100,   //number of records the app want to read
             (bSuccess, dataRsp, error) -> {
@@ -1590,7 +1594,7 @@ public void readCutoffHistoryRecordExample()
                 {
                     for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                     {
-                        KBRecordCutoff record = (KBRecordCutoff)sensorRecord;
+                        KBCutoffRecord record = (KBCutoffRecord)sensorRecord;
                         Log.v(LOG_TAG, "record utc time:" + record.utcTime);
                         Log.v(LOG_TAG, "record cut off Flag:" + record.cutoffFlag);
                     }
@@ -1606,7 +1610,7 @@ public void readCutoffHistoryRecordExample()
 public void readPIRHistoryRecordExample()
 {
     mBeacon.readSensorRecord(KBSensorType.PIR,
-            KBRecordDataRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+            KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
             KBSensorReadOption.NewRecord,  //read direction type
             100,   //number of records the app want to read
             (bSuccess, dataRsp, error) -> {
@@ -1614,7 +1618,7 @@ public void readPIRHistoryRecordExample()
                 {
                     for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                     {
-                        KBRecordPIR record = (KBRecordPIR)sensorRecord;
+                        KBPIRRecord record = (KBPIRRecord)sensorRecord;
                         Log.v(LOG_TAG, "record utc time:" + record.utcTime);
                         Log.v(LOG_TAG, "record pir indication:" + record.pirIndication);
                     }
@@ -1630,7 +1634,7 @@ public void readPIRHistoryRecordExample()
 public void readLightHistoryRecordExample()
 {
     mBeacon.readSensorRecord(KBSensorType.Light,
-            KBRecordDataRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+            KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
             KBSensorReadOption.NewRecord,  //read direction type
             100,   //number of records the app want to read
             (bConfigSuccess, dataRsp, error) -> {
@@ -1638,7 +1642,7 @@ public void readLightHistoryRecordExample()
                 {
                     for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                     {
-                        KBRecordLight record = (KBRecordLight)sensorRecord;
+                        KBLightRecord record = (KBLightRecord)sensorRecord;
                         Log.v(LOG_TAG, "Light utc time:" + record.utcTime);
                         Log.v(LOG_TAG, "Light level:" + record.lightLevel);
                     }
@@ -1654,7 +1658,7 @@ public void readLightHistoryRecordExample()
 public void readVOCHistoryRecordExample()
 {
    mBeacon.readSensorRecord(KBSensorType.Light,
-           KBRecordDataRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+           KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
            KBSensorReadOption.NewRecord,  //read direction type
            100,   //number of records the app want to read
            (bConfigSuccess, dataRsp, error) -> {
@@ -1662,8 +1666,8 @@ public void readVOCHistoryRecordExample()
                {
                    for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                    {
-                       KBRecordVOC record = (KBRecordVOC)sensorRecord;
-                       Log.v(LOG_TAG, "VOC utc time:" + record.utcTime);
+                       KBVOCRecord record = (KBVOCRecord)sensorRecord;
+                       Log.v(LOG_TAG, "Light utc time:" + record.utcTime);
                        Log.v(LOG_TAG, "VOC index:" + record.vocIndex);
                    }
                    if (dataRsp.readDataNextPos == KBSensorReadRecordRsp.INVALID_DATA_RECORD_POS)

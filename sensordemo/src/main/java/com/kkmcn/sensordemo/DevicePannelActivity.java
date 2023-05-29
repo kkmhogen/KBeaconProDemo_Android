@@ -1128,8 +1128,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 });
     }
 
-    //set disable period parameters
-    public void setPIRDisablePeriod() {
+    //set door sensor disable period parameters
+    public void setDoorDisablePeriod() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
             return;
@@ -1137,15 +1137,17 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         //check device capability
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
-        if (oldCommonCfg != null && !oldCommonCfg.isSupportPIRSensor())
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportCutoffSensor())
         {
-            toastShow("device does not support PIR sensor");
+            toastShow("device does not support door cutoff sensor");
             return;
         }
 
         //enable PIR trigger
         KBCfgSensorBase sensorPara = new KBCfgSensorBase();
-        sensorPara.setSensorType(KBSensorType.PIR);
+        sensorPara.setSensorType(KBSensorType.Cutoff);
+
+        //sensor enable period
         KBTimeRange disablePeriod = new KBTimeRange();
         disablePeriod.localStartHour = 8;
         disablePeriod.localStartMinute = 0;
