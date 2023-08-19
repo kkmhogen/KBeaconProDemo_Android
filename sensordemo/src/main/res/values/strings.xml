@@ -252,7 +252,7 @@
     <string name="temp_humidity_sensor_command">TH&amp;Acc KSensor adv</string>
     <string name="other_sensor_command">Other sensor sensor</string>
     <string name="ring_device_btn_title">Ring device</string>
-
+    <string name="co2_calibration">CO2 calibration</string>
     <string name="enable_btn_trigger_to_adv">TriggerEvt 2 Adv</string>
     <string name="enable_btn_trigger_to_app">TriggerEvt 2 App</string>
     <string name="read_btn_trigger">Read para</string>

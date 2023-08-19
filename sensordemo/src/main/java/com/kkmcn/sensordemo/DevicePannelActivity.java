@@ -55,6 +55,8 @@ import com.kkmcn.kbeaconlib2.KBConnectionEvent;
 import com.kkmcn.kbeaconlib2.KBException;
 import com.kkmcn.kbeaconlib2.KBeacon;
 import com.kkmcn.kbeaconlib2.KBeaconsMgr;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.text.SimpleDateFormat;
@@ -149,6 +151,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         findViewById(R.id.dfuDevice).setOnClickListener(this);
 
+        findViewById(R.id.forceCo2Calibration).setOnClickListener(this);
+
     }
 
     @Override
@@ -206,6 +210,10 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
             case R.id.disableAccAppTrigger:
                 disableMotionTrigger();
+                break;
+
+            case R.id.forceCo2Calibration:
+                forceCo2Calibration();
                 break;
 
             //ksensor advertisement
@@ -1061,6 +1069,48 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
+    public void settingChannelMask(){
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check capability
+        final KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+        if (cfgCommon != null && !cfgCommon.isSupportAdvChannelMask())
+        {
+            toastShow("device does not support channel mask");
+            return;
+        }
+
+        KBCfgAdvIBeacon iBeaconAdv = new KBCfgAdvIBeacon();
+        iBeaconAdv.setSlotIndex(0);
+
+        //disable advertisement on channel 38 and 39
+        iBeaconAdv.setAdvChanelMask(KBCfgAdvBase.ADV_CH_38_DISABLE_MASK | KBCfgAdvBase.ADV_CH_39_DISABLE_MASK);
+
+        iBeaconAdv.setAdvPeriod(1022.5f);
+        iBeaconAdv.setTxPower(0);
+        iBeaconAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570003");
+        iBeaconAdv.setMajorID(10);
+        iBeaconAdv.setMinorID(155);
+
+        mBeacon.modifyConfig(iBeaconAdv, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mRingButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    toastShow("modify adv channel mask success");
+                }
+                else
+                {
+                    toastShow("modify adv channel mask failed:" + error.errorCode);
+                }
+            }
+        });
+    }
+
     //set light sensor measure parameters
     public void setLightSensorMeasureParameters()
     {
@@ -1189,13 +1239,13 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         sensorHTPara.setLogEnable(true);
 
         //unit is second, set measure temperature and humidity interval
-        sensorHTPara.setSensorHtMeasureInterval(2);
+        sensorHTPara.setMeasureInterval(2);
 
         //unit is 0.1%, if abs(current humidity - last saved humidity) > 3, then save new record
-        sensorHTPara.setHumidityChangeThreshold(30);
+        sensorHTPara.setHumidityLogThreshold(30);
 
         //unit is 0.1 Celsius, if abs(current temperature - last saved temperature) > 0.5, then save new record
-        sensorHTPara.setTemperatureChangeThreshold(5);
+        sensorHTPara.setHumidityLogThreshold(5);
 
         //enable sensor advertisement
         mBeacon.modifyConfig(sensorHTPara, new KBeacon.ActionCallback() {
@@ -1262,6 +1312,54 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         //voc sensor
         KBCfgSensorVOC vocSensor = new KBCfgSensorVOC();
         vocSensor.setMeasureInterval(40);
+    }
+
+    //force co2 calibration,
+    //After issuing the command, please keep the device stationary for 3 minutes and do not make any other configuration
+    public void forceCo2Calibration() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check capability
+        final KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (cfgCommon != null && !cfgCommon.isSupportCO2Sensor())
+        {
+            toastShow("device does not support co2 feature");
+            return;
+        }
+
+        JSONObject cmdPara = new JSONObject();
+        try {
+            cmdPara.put("msg", "cfg");
+
+            JSONObject co2Object = new JSONObject();
+            co2Object.put("srType", 65);
+
+            //Calibration CO2 sensor to 420 ppm
+            co2Object.put("fcl", 420);
+
+            JSONArray sensorList = new JSONArray();
+            sensorList.put(0, co2Object);
+
+            cmdPara.put("srObj", sensorList);
+        }catch (JSONException exception)
+        {
+            exception.printStackTrace();
+            return;
+        }
+
+        mBeacon.sendCommand(cmdPara, (bConfigSuccess, error) -> {
+            if (bConfigSuccess)
+            {
+                toastShow("send command to beacon success");
+            }
+            else
+            {
+                toastShow("send command to beacon error:" + error.errorCode);
+            }
+        });
     }
 
     //ring device

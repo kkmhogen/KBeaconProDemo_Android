@@ -347,15 +347,9 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
         {
             Log.v(TAG, "start scan success");
         }
-        else if (nStartScan == KBeaconsMgr.SCAN_ERROR_BLE_NOT_ENABLE) {
-            toastShow("BLE function is not enable");
-        }
-        else if (nStartScan == KBeaconsMgr.SCAN_ERROR_NO_PERMISSION) {
-            toastShow("BLE scanning has no location permission");
-        }
         else
         {
-            toastShow("BLE scanning unknown error");
+            toastShow("Please make sure the app has BLE scan permission");
         }
     }
 

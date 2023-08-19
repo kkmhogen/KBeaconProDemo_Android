@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="track_setting">设置</string>
-    <string name="test_num_per">每次测试个数</string>
-    <string name="TEMPLATE_NAME">Template Name</string>
-</resources>

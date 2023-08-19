@@ -269,6 +269,12 @@
                     android:text="@string/ring_device_btn_title"
                     android:textAllCaps="false" />
 
+                <Button
+                    android:id="@+id/forceCo2Calibration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/co2_calibration"
+                    android:textAllCaps="false" />
 
             </LinearLayout>
 

@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.1'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.5'
 }
 ```
 This library is also open source, please refer to this link.  
@@ -1902,12 +1902,13 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
-*  2023.5.20 V1.8 Add VOC and  sensor
-*  2022.11.30 V1.7 Add Light sensor
-*  2022.6.5 V1.6 Add PIR sensor
-*  2021.8.20 V1.51 Add cutoff sensor
-*  2021.6.20 V1.41 Support slot mode advertisement
-*  2021.1.30 V1.31 Support button and motion trigger event in connected state
+* 2023.6.29 V1.9 add LED blink setting, add channel mask setting, support new humidity sensor
+* 2023.5.20 V1.8 Add VOC and sensor
+* 2022.11.30 V1.7 Add Light sensor
+* 2022.6.5 V1.6 Add PIR sensor
+* 2021.8.20 V1.51 Add cutoff sensor
+* 2021.6.20 V1.41 Support slot mode advertisement
+* 2021.1.30 V1.31 Support button and motion trigger event in connected state
 * 2020.11.11 v1.30 Support temperature and humidity sensor. Remove AAR library, please download library from JCenter.
 * 2020.3.1 v1.23 change the adv period type from integer to float.
 * 2020.1.16 v1.22 add button trigger.
