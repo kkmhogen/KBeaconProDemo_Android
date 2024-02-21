@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.5'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.7'
 }
 ```
 This library is also open source, please refer to this link.  
@@ -1274,6 +1274,49 @@ public void enableLightTrigger() {
 }  
 ```
 
+#### 4.3.4.7 Tilt Angle trigger
+For some KBecon devices with 3-axis accelerometers, you can set the device to trigger based on the tilt angle.  
+Through the Tilt angle trigger, we can set an alarm when the product tilt angle is below or above a specified threshold. Also, if the product remains in this tilted state, the trigger can also report it repeatedly.  
+The tilt below angle range is 90 degrees to -90 degrees.  
+When the product is placed upright, the angle is 90 degrees, and when the product is inverted, it is -90 degrees.  
+![avatar](https://github.com/kkmhogen/KBeaconProDemo_Ios/blob/main/tilt_angle.png?raw=true)  
+
+```Java
+//set tilt angle trigger
+public void enableTiltAngleTrigger()
+{
+    //check capability
+    final KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getCommonCfg();
+    if (cfgCommon != null && !cfgCommon.isSupportTrigger(KBTriggerType.AccAngle))
+    {
+        Log.e(LOG_TAG, "device does not support acc tilt angle trigger");
+        return;
+    }
+
+    //set tilt angle trigger
+    KBCfgTriggerAngle angleTrigger = new KBCfgTriggerAngle();
+    angleTrigger.setTriggerAction(KBTriggerAction.Advertisement | KBTriggerAction.Report2App);
+    angleTrigger.setTriggerAdvSlot(0);
+
+    //set trigger angle
+    angleTrigger.setTriggerPara(45);        //set below angle threshold
+    angleTrigger.setAboveAngle(90);         //set above angle threshold
+    angleTrigger.setReportInterval(1);   //set repeat report interval to 1 minutes
+
+    mBeacon.modifyConfig(angleTrigger,
+            (bConfigSuccess, error) -> {
+                if (bConfigSuccess)
+                {
+                    Log.v(LOG_TAG, "Enable angle trigger success");
+                }
+                else
+                {
+                    Log.v(LOG_TAG, "Enable angle trigger failed");
+                }
+            });
+}  
+```
+
 #### 4.3.5 Sensor parameters
 If the device has sensors, such as temperature and humidity sensors, we may need to setting the sensor parameters, such as the measurement interval.  
 There are also some beacons, which can save sensor events to non-volatile memory, so that the app or gateway can obtain these historical records. Therefore, we may need to configure the conditions for recording events, such as recording an event when the temperature changes by more than 3 degrees.
@@ -1902,6 +1945,7 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
+* 2024.1.20 v1.91 add AOA and tilt angle trigger
 * 2023.6.29 V1.9 add LED blink setting, add channel mask setting, support new humidity sensor
 * 2023.5.20 V1.8 Add VOC and sensor
 * 2022.11.30 V1.7 Add Light sensor

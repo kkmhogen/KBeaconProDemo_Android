@@ -91,17 +91,17 @@ public class LeDeviceListAdapter extends BaseAdapter {
 					.findViewById(R.id.tv_iBeacon_major);
 
 
-			//humidity
-			viewHolder.llHTSensor= view
-					.findViewById(R.id.ll_ht_sensor);
-			viewHolder.deviceHumidity = view
-					.findViewById(R.id.tv_ht_sensor);
+			//sensor 1
+			viewHolder.llSensorItem1= view
+					.findViewById(R.id.ll_sensor_item1);
+			viewHolder.txtDeviceItem1 = view
+					.findViewById(R.id.tv_sensor_item1);
 
-			//acc sensor
-			viewHolder.llAccSensor= view
-					.findViewById(R.id.ll_acc_sensor);
-			viewHolder.deviceAccPosition = view
-					.findViewById(R.id.tv_acc_sensor);
+			// sensor 2
+			viewHolder.llSensorItem2= view
+					.findViewById(R.id.ll_sensor_item2);
+			viewHolder.txtDeviceItem2 = view
+					.findViewById(R.id.tv_sensor_item2);
 
 			view.setTag(viewHolder);
 		}
@@ -205,10 +205,10 @@ public class LeDeviceListAdapter extends BaseAdapter {
 						.append("%");
 			}
 			if (strHTInfo.length() > 1) {
-				viewHolder.llHTSensor.setVisibility(View.VISIBLE);
-				viewHolder.deviceHumidity.setText(strHTInfo.toString());
+				viewHolder.llSensorItem1.setVisibility(View.VISIBLE);
+				viewHolder.txtDeviceItem1.setText(strHTInfo.toString());
 			}else{
-				viewHolder.llHTSensor.setVisibility(View.GONE);
+				viewHolder.llSensorItem1.setVisibility(View.GONE);
 			}
 
 			//acc sensor info
@@ -217,18 +217,38 @@ public class LeDeviceListAdapter extends BaseAdapter {
 			{
 				String strAccAxis = mContext.getString(R.string.BEACON_ACC_POS) + "x=" + accSensorValue.xAis
 						+ ",y=" + accSensorValue.yAis + ",z=" + accSensorValue.zAis;
-				viewHolder.llAccSensor.setVisibility(View.VISIBLE);
-				viewHolder.deviceAccPosition.setText(strAccAxis);
+				viewHolder.llSensorItem2.setVisibility(View.VISIBLE);
+				viewHolder.txtDeviceItem2.setText(strAccAxis);
 			}
 			else
 			{
-				viewHolder.llAccSensor.setVisibility(View.GONE);
+				viewHolder.llSensorItem2.setVisibility(View.GONE);
+			}
+
+			//co2 sensor info
+			Integer co2SensorValue = kSensor.getCo2();
+			Integer vocSensorValue = kSensor.getVoc();
+			if (co2SensorValue != null || vocSensorValue != null)
+			{
+				String strCO2Level = "";
+				if (co2SensorValue != null) {
+					strCO2Level = mContext.getString(R.string.BEACON_ACC_CO2) + co2SensorValue + "   ";
+				}
+				if (vocSensorValue != null){
+					strCO2Level = strCO2Level + mContext.getString(R.string.BEACON_ACC_VOC) + vocSensorValue + "   ";
+				}
+				viewHolder.llSensorItem2.setVisibility(View.VISIBLE);
+				viewHolder.txtDeviceItem2.setText(strCO2Level);
+			}
+			else
+			{
+				viewHolder.llSensorItem2.setVisibility(View.GONE);
 			}
 		}
 		else
 		{
-			viewHolder.llHTSensor.setVisibility(View.GONE);
-			viewHolder.llAccSensor.setVisibility(View.GONE);
+			viewHolder.llSensorItem2.setVisibility(View.GONE);
+			viewHolder.llSensorItem1.setVisibility(View.GONE);
 		}
 
 		return view;
@@ -244,15 +264,17 @@ public class LeDeviceListAdapter extends BaseAdapter {
 		LinearLayout lliBeaconUUID;
 		LinearLayout lliBeaconMajor;
 
-		LinearLayout llHTSensor;
-		LinearLayout llAccSensor;
+
 		LinearLayout llEddyTLM;
 
 		TextView deviceIBeaconUUID;
 		TextView deviceIBeaconMajor;
 
 		TextView deviceEddyTLM;
-		TextView deviceHumidity;
-		TextView deviceAccPosition;
+
+		LinearLayout llSensorItem1;
+		LinearLayout llSensorItem2;
+		TextView txtDeviceItem1;
+		TextView txtDeviceItem2;
 	}
 }

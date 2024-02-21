@@ -6,6 +6,128 @@
     android:fitsSystemWindows="true"
     >
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:focusable="true"
+            android:background="@color/white"
+            android:focusableInTouchMode="true"
+            android:orientation="horizontal"
+            android:weightSum="1.0">
+
+
+            <Button
+                android:id="@+id/btnFilterInfo"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:gravity="start|center_vertical"
+                android:paddingStart="10dp"
+                android:paddingEnd="5dp"
+                android:layout_weight="1.0"
+                android:textAllCaps="false"
+                android:background="@color/transparent"
+                android:textColor="@color/gray"
+                android:hint="@string/BEACON_FILTER_BEACON" />
+
+            <Button
+                android:id="@+id/btnRemoveAllFilter"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/remove" />
+
+            <Button
+                android:id="@+id/imageButtonArrow"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="5dp"
+                android:background="@drawable/downarrow" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layFilterName"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:focusable="true"
+            android:background="@color/white"
+            android:focusableInTouchMode="true"
+            android:orientation="horizontal"
+            android:weightSum="1.0">
+
+
+            <EditText
+                android:id="@+id/editFilterName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1.0"
+                android:layout_marginStart="10dp"
+                android:hint="@string/BEACON_FILTER_NAME"
+                android:inputType="textPersonName"
+                android:paddingEnd="5dp"
+                android:maxLines="1"
+                android:textSize="14sp" />
+
+
+            <Button
+                android:id="@+id/btmRemoveFilterName"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/remove" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layRssiFilter"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@color/white"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:orientation="horizontal"
+            android:weightSum="1.0">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="10dp"
+                android:hint="@string/BEACON_RSSI_Filter_title" />
+
+
+            <SeekBar
+                android:id="@+id/seekBarRssiFilter"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:max="80"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/txtViewRssiValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="10dp"
+                android:layout_marginBottom="3dp"
+                android:text="-100dBm"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp" />
+        </LinearLayout>
+
+
+    </LinearLayout>
+
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_container"

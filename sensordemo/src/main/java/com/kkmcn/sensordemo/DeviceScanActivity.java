@@ -23,12 +23,19 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAccSensorValue;
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketBase;
@@ -53,7 +60,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
-public class DeviceScanActivity extends AppBaseActivity implements AdapterView.OnItemClickListener,
+public class DeviceScanActivity extends AppBaseActivity implements View.OnClickListener, AdapterView.OnItemClickListener,
         KBeaconsMgr.KBeaconMgrDelegate, LeDeviceListAdapter.ListDataSource{
 	private final static String TAG = "Beacon.ScanAct";//DeviceScanActivity.class.getSimpleName();
 
@@ -74,6 +81,15 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
     private HashMap<String, KBeacon> mBeaconsDictory;
     private KBeacon[] mBeaconsArray;
     private KBeaconsMgr mBeaconsMgr;
+
+
+    private Button mBtnFilterTotal, mBtnRmvAllFilter, mBtnFilterArrow, mBtnRmvNameFilter;
+    private TextView mTxtViewRssi;
+    private SeekBar mSeekBarRssi;
+    private int mRssiFilterValue;
+    private EditText mEditFltDevName;
+    private String mFilterName = "";
+    private LinearLayout mLayoutFilterName, mLayoutFilterRssi;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -114,14 +130,57 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
             return;
         }
         mBeaconsMgr.delegate = this;
-        //mBeaconsMgr.setScanMinRssiFilter(-90);
         mBeaconsMgr.setScanMode(KBeaconsMgr.SCAN_MODE_LOW_LATENCY);
-        mBeaconsMgr.setScanAdvTypeFilter(KBAdvType.EddyTLM | KBAdvType.Sensor | KBAdvType.IBeacon);
-
         mListView = (ListView) findViewById(R.id.listview);
         mDevListAdapter = new LeDeviceListAdapter(this, getApplicationContext());
         mListView.setAdapter(mDevListAdapter);
         mListView.setOnItemClickListener(this);
+
+
+        //total filter information
+        mBtnFilterTotal = (Button) findViewById(R.id.btnFilterInfo);
+        mBtnFilterTotal.setOnClickListener(this);
+        mBtnRmvAllFilter = (Button) findViewById(R.id.btnRemoveAllFilter);
+        mBtnRmvAllFilter.setOnClickListener(this);
+        mBtnRmvAllFilter.setVisibility(View.GONE);
+        mBtnFilterArrow = (Button) findViewById(R.id.imageButtonArrow);
+        mBtnFilterArrow.setOnClickListener(this);
+        mBtnFilterArrow.setTag(0);
+
+        //filter layout
+        mLayoutFilterName = (LinearLayout) findViewById(R.id.layFilterName);
+        mLayoutFilterName.setVisibility(View.GONE);
+
+
+        mLayoutFilterRssi = (LinearLayout) findViewById(R.id.layRssiFilter);
+        mLayoutFilterRssi.setVisibility(View.GONE);
+
+        //remove action
+        findViewById(R.id.btmRemoveFilterName).setOnClickListener(this);
+
+        mRssiFilterValue = -100;
+        mSeekBarRssi = (SeekBar) findViewById(R.id.seekBarRssiFilter);
+        mSeekBarRssi.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mRssiFilterValue = progress - 100;
+                String strRssiValue = String.valueOf(mRssiFilterValue) + getString(R.string.BEACON_RSSI_UINT);
+                mTxtViewRssi.setText(strRssiValue);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
+        mTxtViewRssi = (TextView) findViewById(R.id.txtViewRssiValue);
+        mEditFltDevName = (EditText) findViewById(R.id.editFilterName);
+        mEditFltDevName.addTextChangedListener(new EditChangedListener());
+        mBtnRmvNameFilter = (Button)findViewById(R.id.btmRemoveFilterName);
 
         swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swipe_container);
         //设置刷新时动画的颜色，可以设置4个
@@ -153,6 +212,125 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
             }
         });
     }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btnRemoveAllFilter: {
+                mBtnFilterTotal.setText("");
+                mSeekBarRssi.setProgress(0);
+                mEditFltDevName.setText("");
+                mBtnRmvAllFilter.setVisibility(View.GONE);
+                enableFilterSetting();
+                break;
+            }
+
+            case R.id.imageButtonArrow:
+            {
+                checkDetailFilterDlg();
+                break;
+            }
+
+            case R.id.btnFilterInfo: {
+                checkDetailFilterDlg();
+                break;
+            }
+
+            case R.id.listview:
+            {
+                mBtnRmvAllFilter.setVisibility(View.GONE);
+            }
+
+            case R.id.btmRemoveFilterName: {
+                mEditFltDevName.setText("");
+                break;
+            }
+        }
+    }
+
+
+    private void enableFilterSetting()
+    {
+        //filter
+        String strFilterName = mEditFltDevName.getText().toString();
+        boolean bChangeFilter = false;
+        if (!strFilterName.equals(mBeaconsMgr.getScanNameFilter()))
+        {
+            mBeaconsMgr.setScanNameFilter(strFilterName, true);
+            bChangeFilter = true;
+        }
+        if (mRssiFilterValue != mBeaconsMgr.getScanMinRssiFilter())
+        {
+            mBeaconsMgr.setScanMinRssiFilter(mRssiFilterValue);
+            bChangeFilter = true;
+        }
+        if (bChangeFilter){
+            clearAllData();
+            mDevListAdapter.notifyDataSetChanged();
+        }
+
+        //update information
+        String strTotalFilter = "";
+        if (strFilterName.length() > 0) {
+            strTotalFilter = strFilterName + ";";
+        }
+        if (mRssiFilterValue != -100) {
+            strTotalFilter = strTotalFilter + String.valueOf(mRssiFilterValue) + getString(R.string.BEACON_RSSI_UINT);
+        }
+        mBtnFilterTotal.setText(strTotalFilter);
+
+
+        //show remove button
+        if (strTotalFilter.length() > 0) {
+            mBtnRmvAllFilter.setVisibility(View.VISIBLE);
+        } else {
+            mBtnRmvAllFilter.setVisibility(View.GONE);
+        }
+    }
+
+    void checkDetailFilterDlg()
+    {
+        if (mLayoutFilterRssi.getVisibility() == View.GONE) {
+            mLayoutFilterRssi.setVisibility(View.VISIBLE);
+            mLayoutFilterName.setVisibility(View.VISIBLE);
+            mBtnFilterArrow.setBackground(getResources().getDrawable(R.drawable.uparrow));
+            mBtnFilterArrow.setTag(1);
+        } else {
+            mLayoutFilterRssi.setVisibility(View.GONE);
+            mLayoutFilterName.setVisibility(View.GONE);
+            mBtnFilterArrow.setBackground(getResources().getDrawable(R.drawable.downarrow));
+            mBtnFilterArrow.setTag(0);
+
+            enableFilterSetting();
+        }
+    }
+
+
+    private class EditChangedListener implements TextWatcher {
+        private CharSequence temp;//监听前的文本
+        private int editStart;//光标开始位置
+        private int editEnd;//光标结束位置
+        private final int charMaxNum = 10;
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            temp = s;
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            if (s.length() > 0)
+            {
+                mBtnRmvNameFilter.setVisibility(View.VISIBLE);
+            }else{
+                mBtnRmvNameFilter.setVisibility(View.GONE);
+            }
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+        }
+    };
 
     public void clearAllData()
     {
@@ -341,7 +519,6 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
             return;
         }
 
-        mBeaconsMgr.setScanMinRssiFilter(-60);
         int nStartScan = mBeaconsMgr.startScanning();
         if (nStartScan == 0)
         {

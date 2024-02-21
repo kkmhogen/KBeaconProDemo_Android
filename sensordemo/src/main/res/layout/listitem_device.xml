@@ -134,11 +134,11 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             android:orientation="horizontal"
-            android:id="@+id/ll_ht_sensor"
+            android:id="@+id/ll_sensor_item1"
             android:weightSum="1">
 
             <TextView
-                android:id="@+id/tv_ht_sensor"
+                android:id="@+id/tv_sensor_item1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/BEACON_TEMPERATURE" />
@@ -150,11 +150,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:id="@+id/ll_acc_sensor"
+            android:id="@+id/ll_sensor_item2"
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/tv_acc_sensor"
+                android:id="@+id/tv_sensor_item2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"

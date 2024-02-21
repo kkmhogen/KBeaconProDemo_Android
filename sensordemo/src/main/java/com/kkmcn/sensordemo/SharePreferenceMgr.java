@@ -11,6 +11,7 @@ public class SharePreferenceMgr {
     private final static String SETTING_INFO = "SETTING_INFO";
     private final static String FLD_VRY_CODE_NUM_VALUE = "FLD_VRY_CODE_NUM_VALUE";
     private final static String DEF_VRY_CODE_NUM = "0000000000000000";
+    private final static String CO2_CALIBRATION_VALUE = "CO2_CALIBRATION_VALUE";
 
 
     static private SharePreferenceMgr sPrefMgr = null;
@@ -43,6 +44,17 @@ public class SharePreferenceMgr {
 
     public String getPassword(String strMacAddress){
         return shareReference.getString(FLD_VRY_CODE_NUM_VALUE+strMacAddress.toLowerCase(), DEF_VRY_CODE_NUM);
+    }
+
+    public String getCO2Calibration(){
+        return shareReference.getString(CO2_CALIBRATION_VALUE, "420");
+    }
+
+    public void setCO2Calibration(String strCO2Level)
+    {
+        SharedPreferences.Editor edit = shareReference.edit();
+        edit.putString(CO2_CALIBRATION_VALUE, strCO2Level);
+        edit.apply();
     }
 
 }

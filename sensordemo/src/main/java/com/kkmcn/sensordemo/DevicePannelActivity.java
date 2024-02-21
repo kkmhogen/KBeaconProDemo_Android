@@ -28,6 +28,7 @@ import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorLight;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorPIR;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorVOC;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTrigger;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTriggerAngle;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTriggerMotion;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBSensorType;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTimeRange;
@@ -95,7 +96,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     private Button mRingButton;
     private String mNewPassword;
     SharePreferenceMgr mPref;
-
+    EditText mTxtCo2CalibrationLevel;
+    EditText mTxtCo2CalibrationBaseline;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -149,8 +151,13 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mRingButton = (Button) findViewById(R.id.ringDevice);
         mRingButton.setOnClickListener(this);
 
-        findViewById(R.id.dfuDevice).setOnClickListener(this);
+        mTxtCo2CalibrationLevel = findViewById(R.id.txtCo2Calibration);
+        mTxtCo2CalibrationLevel.setText(mPref.getCO2Calibration());
 
+        mTxtCo2CalibrationBaseline = findViewById(R.id.txtCo2Baseline);
+
+        findViewById(R.id.dfuDevice).setOnClickListener(this);
+        findViewById(R.id.co2BaselineRead).setOnClickListener(this);
         findViewById(R.id.forceCo2Calibration).setOnClickListener(this);
 
     }
@@ -216,6 +223,12 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 forceCo2Calibration();
                 break;
 
+            case R.id.co2BaselineRead:
+            {
+                readCo2Baseline();
+                break;
+            }
+
             //ksensor advertisement
             case R.id.enableAccAdvertisement:
                 enableAdvTypeIncludeAccXYZ();
@@ -270,6 +283,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             case R.id.ringDevice:
                 ringDevice();
                 break;
+
             default:
                 break;
         }
@@ -286,7 +300,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
             KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
             if (cfgCommon != null) {
-                this.mBeaconModel.setText(cfgCommon.getModel());
+                String strSoftVersion = cfgCommon.getVersion();
+                this.mBeaconModel.setText(cfgCommon.getModel() + "," + strSoftVersion);
                 ArrayList<KBCfgAdvBase> slotCfg = mBeacon.getSlotCfgList();
                 String strAdvType = "";
                 for (KBCfgAdvBase adv : slotCfg)
@@ -1178,6 +1193,34 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 });
     }
 
+    //read battery percent when connected
+    public void readBatteryPercent()
+    {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //get battery percent(the SDK will read battery level after authentication)
+        final KBCfgCommon commPara = mBeacon.getCommonCfg();
+        if (commPara != null)
+        {
+            Log.v(LOG_TAG, "old battery percent:" + commPara.getBatteryPercent());
+        }
+
+        //read new battery percent from device again
+        mBeacon.readCommonConfig((result, jsonObject, error) -> {
+            //read complete
+            if (result && jsonObject != null) {
+                final KBCfgCommon newCommPara = mBeacon.getCommonCfg();
+                Log.v(LOG_TAG, "new battery percent:" + newCommPara.getBatteryPercent());
+
+                //--------also the JSON object contain battery percent
+                //jsonObject.getInt("btPt")
+            }
+        });
+    }
+
     //set door sensor disable period parameters
     public void setDoorDisablePeriod() {
         if (!mBeacon.isConnected()) {
@@ -1314,6 +1357,50 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         vocSensor.setMeasureInterval(40);
     }
 
+    public void readCo2Baseline(){
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check capability
+        final KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (cfgCommon != null && !cfgCommon.isSupportCO2Sensor())
+        {
+            toastShow("device does not support co2 feature");
+            return;
+        }
+
+        mBeacon.readSensorConfig(65, new KBeacon.ReadConfigCallback() {
+            @Override
+            public void onReadComplete(boolean b, JSONObject jsonObject, KBException e) {
+                if (b)
+                {
+                    if (jsonObject.has("srObj"))
+                    {
+                        try {
+                            JSONArray sensorArray = jsonObject.getJSONArray("srObj");
+                            JSONObject object = sensorArray.getJSONObject(0);
+                            if (object.has("aTgt"))
+                            {
+                                Integer targetBaseline = object.getInt("aTgt");
+                                mTxtCo2CalibrationBaseline.setText(String.valueOf(targetBaseline));
+                            }
+                            else
+                            {
+                                toastShow("device does not support co2 baseline setting");
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            exception.printStackTrace();
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     //force co2 calibration,
     //After issuing the command, please keep the device stationary for 3 minutes and do not make any other configuration
     public void forceCo2Calibration() {
@@ -1329,6 +1416,32 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             toastShow("device does not support co2 feature");
             return;
         }
+        String strCo2Calibration = mTxtCo2CalibrationLevel.getText().toString();
+        if (!Utils.isPositiveInteger(strCo2Calibration))
+        {
+            toastShow("input CO2 calibration value invalid");
+            return;
+        }
+
+        Integer nCO2Calibration = Integer.valueOf(strCo2Calibration);
+        if (nCO2Calibration < 400)
+        {
+            toastShow("input CO2 calibration value must > 400");
+            return;
+        }
+        mPref.setCO2Calibration(strCo2Calibration);
+
+        //asc baseline
+        Integer nCO2Baseline = null;
+        String strCO2Baseline = mTxtCo2CalibrationBaseline.getText().toString();
+        if (strCO2Baseline.length() > 0 && Utils.isPositiveInteger(strCO2Baseline)) {
+            nCO2Baseline = Integer.valueOf(strCO2Baseline);
+            if (nCO2Baseline < 400) {
+                toastShow("input CO2 ASC baseline value must > 400");
+                return;
+            }
+        }
+
 
         JSONObject cmdPara = new JSONObject();
         try {
@@ -1338,7 +1451,12 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             co2Object.put("srType", 65);
 
             //Calibration CO2 sensor to 420 ppm
-            co2Object.put("fcl", 420);
+            co2Object.put("fcl", nCO2Calibration);
+
+            //baseline
+            if (nCO2Baseline != null) {
+                co2Object.put("aTgt", nCO2Baseline);
+            }
 
             JSONArray sensorList = new JSONArray();
             sensorList.put(0, co2Object);
@@ -1353,7 +1471,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mBeacon.sendCommand(cmdPara, (bConfigSuccess, error) -> {
             if (bConfigSuccess)
             {
-                toastShow("send command to beacon success");
+                toastShow("send CO2 calibration to device success, please wait 3 minute to take effect");
             }
             else
             {
@@ -1633,6 +1751,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
+
+
     //Example4: read VOC sensor history records
     public void readVOCHistoryRecordExample()
     {
@@ -1653,6 +1773,40 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                         {
                             Log.v(LOG_TAG, "Read data complete");
                         }
+                    }
+                });
+    }
+
+    //set tilt angle trigger
+    public void enableTiltAngleTrigger()
+    {
+        //check capability
+        final KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (cfgCommon != null && !cfgCommon.isSupportTrigger(KBTriggerType.AccAngle))
+        {
+            Log.e(LOG_TAG, "device does not support acc tilt angle trigger");
+            return;
+        }
+
+        //set tilt angle trigger
+        KBCfgTriggerAngle angleTrigger = new KBCfgTriggerAngle();
+        angleTrigger.setTriggerAction(KBTriggerAction.Advertisement | KBTriggerAction.Report2App);
+        angleTrigger.setTriggerAdvSlot(0);
+
+        //set trigger angle
+        angleTrigger.setTriggerPara(45);        //set below angle threshold
+        angleTrigger.setAboveAngle(90);         //set above angle threshold
+        angleTrigger.setReportInterval(1);   //set repeat report interval to 1 minutes
+
+        mBeacon.modifyConfig(angleTrigger,
+                (bConfigSuccess, error) -> {
+                    if (bConfigSuccess)
+                    {
+                        Log.v(LOG_TAG, "Enable angle trigger success");
+                    }
+                    else
+                    {
+                        Log.v(LOG_TAG, "Enable angle trigger failed");
                     }
                 });
     }

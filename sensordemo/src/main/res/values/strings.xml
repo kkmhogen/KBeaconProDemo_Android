@@ -252,7 +252,9 @@
     <string name="temp_humidity_sensor_command">TH&amp;Acc KSensor adv</string>
     <string name="other_sensor_command">Other sensor sensor</string>
     <string name="ring_device_btn_title">Ring device</string>
-    <string name="co2_calibration">CO2 calibration</string>
+    <string name="co2_calibration">Calibration</string>
+    <string name="co2_baseline_read">Read</string>
+
     <string name="enable_btn_trigger_to_adv">TriggerEvt 2 Adv</string>
     <string name="enable_btn_trigger_to_app">TriggerEvt 2 App</string>
     <string name="read_btn_trigger">Read para</string>
@@ -283,13 +285,19 @@
     <string name="NB_network_file_not_exist">Cloud server file not exist</string>
     <string name="UPDATE_FOUND_NEW_VERSION">found new version</string>
     <string name="kb_dfu_device">Dfu</string>
+    <string name="kb_co2_calibration_level">CO2 level</string>
+    <string name="kb_co2_calibration_baseline">Baseline</string>
     <string name="menu_firmware_update">Update</string>
     <string name="UPDATE_RELEASE_NOTES">Release notes:</string>
+    <string name="BEACON_RSSI_Filter_title">RSSI</string>
+    <string name="BEACON_FILTER_BEACON">Tap to edit filter</string>
+    <string name="BEACON_RSSI_UINT">dBm</string>
 
     <string name="UPDATE_NOT_FOUND_NEW_VERSION">Failed to obtain the latest version information, please ensure that the Internet connection is successful.</string>
 
     <string name="DFU_VERSION_MAKE_SURE">To ensure a successful upgrade, it is recommended that the distance between the mobile phone and the KBeacon device be less than 3 meters. Are you sure you want to upgrade?</string>
     <string name="EXPORT_HISTORY_DATA_EMAIL_TITLE">Sensor data about device(mac:%1$s)</string>
+    <string name="BEACON_FILTER_NAME">Filter name</string>
 
     <string name="update_ibeacon_2_tlm">iBeacon2TLM</string>
     <string name="BEACON_TEMP_UINT">°C</string>
@@ -297,6 +305,9 @@
     <string name="BEACON_VOLTAGE">Voltage:</string>
     <string name="BEACON_TEMPERATURE">Temperature:</string>
     <string name="BEACON_ACC_POS">Axis:</string>
+    <string name="BEACON_ACC_CO2">CO2:</string>
+    <string name="BEACON_ACC_VOC">VOC:</string>
+
     <string name="LOAD_MOVING_DATA_FAILED">Load movement record timeout.</string>
     <string name="load_data_complete">Read data complete, update %1$d records.</string>
     <string name="load_data_complete_no_more_data">Read %1$d records, no more data</string>
