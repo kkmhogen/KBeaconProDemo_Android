@@ -267,39 +267,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
                     android:text="@string/ring_device_btn_title"
-                    android:textAllCaps="false"
-                    android:visibility="gone"/>
-
-                <EditText
-                    android:id="@+id/txtCo2Calibration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:hint="@string/kb_co2_calibration_level" />
-
-
-                <EditText
-                    android:id="@+id/txtCo2Baseline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:hint="@string/kb_co2_calibration_baseline" />
-
-                <Button
-                    android:id="@+id/co2BaselineRead"
-                    android:layout_width="60dp"
-                    android:layout_height="50dp"
-                    android:text="@string/co2_baseline_read"
-                    android:textAllCaps="false" />
-
-                <Button
-                    android:id="@+id/forceCo2Calibration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:text="@string/co2_calibration"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"/>
 
             </LinearLayout>
-
-
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

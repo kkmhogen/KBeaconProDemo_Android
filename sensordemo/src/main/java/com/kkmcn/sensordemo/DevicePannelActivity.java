@@ -96,8 +96,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     private Button mRingButton;
     private String mNewPassword;
     SharePreferenceMgr mPref;
-    EditText mTxtCo2CalibrationLevel;
-    EditText mTxtCo2CalibrationBaseline;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -150,15 +148,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mEnablePeriodicallyTrigger2App.setOnClickListener(this);
         mRingButton = (Button) findViewById(R.id.ringDevice);
         mRingButton.setOnClickListener(this);
-
-        mTxtCo2CalibrationLevel = findViewById(R.id.txtCo2Calibration);
-        mTxtCo2CalibrationLevel.setText(mPref.getCO2Calibration());
-
-        mTxtCo2CalibrationBaseline = findViewById(R.id.txtCo2Baseline);
-
         findViewById(R.id.dfuDevice).setOnClickListener(this);
-        findViewById(R.id.co2BaselineRead).setOnClickListener(this);
-        findViewById(R.id.forceCo2Calibration).setOnClickListener(this);
+
 
     }
 
@@ -218,16 +209,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             case R.id.disableAccAppTrigger:
                 disableMotionTrigger();
                 break;
-
-            case R.id.forceCo2Calibration:
-                forceCo2Calibration();
-                break;
-
-            case R.id.co2BaselineRead:
-            {
-                readCo2Baseline();
-                break;
-            }
 
             //ksensor advertisement
             case R.id.enableAccAdvertisement:
@@ -1357,128 +1338,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         vocSensor.setMeasureInterval(40);
     }
 
-    public void readCo2Baseline(){
-        if (!mBeacon.isConnected()) {
-            toastShow("Device is not connected");
-            return;
-        }
-
-        //check capability
-        final KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getCommonCfg();
-        if (cfgCommon != null && !cfgCommon.isSupportCO2Sensor())
-        {
-            toastShow("device does not support co2 feature");
-            return;
-        }
-
-        mBeacon.readSensorConfig(65, new KBeacon.ReadConfigCallback() {
-            @Override
-            public void onReadComplete(boolean b, JSONObject jsonObject, KBException e) {
-                if (b)
-                {
-                    if (jsonObject.has("srObj"))
-                    {
-                        try {
-                            JSONArray sensorArray = jsonObject.getJSONArray("srObj");
-                            JSONObject object = sensorArray.getJSONObject(0);
-                            if (object.has("aTgt"))
-                            {
-                                Integer targetBaseline = object.getInt("aTgt");
-                                mTxtCo2CalibrationBaseline.setText(String.valueOf(targetBaseline));
-                            }
-                            else
-                            {
-                                toastShow("device does not support co2 baseline setting");
-                            }
-                        }
-                        catch (Exception exception)
-                        {
-                            exception.printStackTrace();
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    //force co2 calibration,
-    //After issuing the command, please keep the device stationary for 3 minutes and do not make any other configuration
-    public void forceCo2Calibration() {
-        if (!mBeacon.isConnected()) {
-            toastShow("Device is not connected");
-            return;
-        }
-
-        //check capability
-        final KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getCommonCfg();
-        if (cfgCommon != null && !cfgCommon.isSupportCO2Sensor())
-        {
-            toastShow("device does not support co2 feature");
-            return;
-        }
-        String strCo2Calibration = mTxtCo2CalibrationLevel.getText().toString();
-        if (!Utils.isPositiveInteger(strCo2Calibration))
-        {
-            toastShow("input CO2 calibration value invalid");
-            return;
-        }
-
-        Integer nCO2Calibration = Integer.valueOf(strCo2Calibration);
-        if (nCO2Calibration < 400)
-        {
-            toastShow("input CO2 calibration value must > 400");
-            return;
-        }
-        mPref.setCO2Calibration(strCo2Calibration);
-
-        //asc baseline
-        Integer nCO2Baseline = null;
-        String strCO2Baseline = mTxtCo2CalibrationBaseline.getText().toString();
-        if (strCO2Baseline.length() > 0 && Utils.isPositiveInteger(strCO2Baseline)) {
-            nCO2Baseline = Integer.valueOf(strCO2Baseline);
-            if (nCO2Baseline < 400) {
-                toastShow("input CO2 ASC baseline value must > 400");
-                return;
-            }
-        }
-
-
-        JSONObject cmdPara = new JSONObject();
-        try {
-            cmdPara.put("msg", "cfg");
-
-            JSONObject co2Object = new JSONObject();
-            co2Object.put("srType", 65);
-
-            //Calibration CO2 sensor to 420 ppm
-            co2Object.put("fcl", nCO2Calibration);
-
-            //baseline
-            if (nCO2Baseline != null) {
-                co2Object.put("aTgt", nCO2Baseline);
-            }
-
-            JSONArray sensorList = new JSONArray();
-            sensorList.put(0, co2Object);
-
-            cmdPara.put("srObj", sensorList);
-        }catch (JSONException exception)
-        {
-            exception.printStackTrace();
-            return;
-        }
-
-        mBeacon.sendCommand(cmdPara, (bConfigSuccess, error) -> {
-            if (bConfigSuccess)
-            {
-                toastShow("send CO2 calibration to device success, please wait 3 minute to take effect");
-            }
-            else
-            {
-                toastShow("send command to beacon error:" + error.errorCode);
-            }
-        });
-    }
 
     //ring device
     public void ringDevice() {
@@ -1489,19 +1348,25 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         //check capability
         final KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getCommonCfg();
-        if (cfgCommon != null && !cfgCommon.isSupportBeep())
-        {
-            toastShow("device does not support ring feature");
-            return;
-        }
-
         JSONObject cmdPara = new JSONObject();
         try {
             cmdPara.put("msg", "ring");
             cmdPara.put("ringTime", 20000);   //ring times, uint is ms
-            cmdPara.put("ringType", 0x1);  //0x0:led flash only; 0x1:beep alert only;
-            cmdPara.put("ledOn", 200);   //valid when ringType set to 0x0 or 0x2
-            cmdPara.put("ledOff", 1800); //valid when ringType set to 0x0 or 0x2
+
+            // 0: stop ring
+            // 0x1: Beep
+            // 0x2: LED flash
+            // 0x4: vibration
+            int ringType = 0x2;   //LED flash default
+
+            //check if need beep
+            if (cfgCommon != null && !cfgCommon.isSupportBeep())
+            {
+                ringType = ringType | 0x1;
+            }
+            cmdPara.put("ringType", ringType);  //beep and LED flash
+            cmdPara.put("ledOn", 100);   //valid when ringType set to 0x2/0x4
+            cmdPara.put("ledOff", 900); //valid when ringType set to 0x2/0x4
         }catch (JSONException exception)
         {
             exception.printStackTrace();

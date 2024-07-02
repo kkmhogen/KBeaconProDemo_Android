@@ -361,7 +361,7 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
             return;
         }
 
-        mBeaconsMgr.setScanMinRssiFilter(-60);
+        //mBeaconsMgr.setScanMinRssiFilter(-60);
         int nStartScan = mBeaconsMgr.startScanning();
         if (nStartScan == 0)
         {
