@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.7'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.8'
 }
 ```
 This library is also open source, please refer to this link.  
@@ -116,23 +116,22 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
 ```
 
 3. Start scanning
+The app can initiate a Bluetooth broadcast scan by:
 ```Java
-mBeaconsMgr.delegate = beaconMgrDeletate;
-int nStartScan = mBeaconsMgr.startScanning();
-if (nStartScan == 0)
-{
-    Log.v(TAG, "start scan success");
-}
-else if (nStartScan == KBeaconsMgr.SCAN_ERROR_BLE_NOT_ENABLE) {
-    toastShow("BLE function is not enable");
-}
-else if (nStartScan == KBeaconsMgr.SCAN_ERROR_NO_PERMISSION) {
-    toastShow("BLE scanning has no location permission");
-}
-else
-{
-    toastShow("BLE scanning unknown error");
-}
+  mBeaconsMgr.delegate = beaconMgrDeletate;
+  int nStartScan = mBeaconsMgr.startScanning();
+  if (nStartScan == 0)
+  {
+      Log.v(TAG, "start scan success");
+  }
+  else if (nStartScan == KBeaconsMgr.SCAN_ERROR_BLE_NOT_ENABLE)
+  {
+      toastShow("BLE function is not enable");
+  }
+  else if (nStartScan == KBeaconsMgr.SCAN_ERROR_UNKNOWN)
+  {
+      toastShow("Please make sure the app has BLE scan permission");
+  }
 ```
 
 4. Implementation KBeaconMgr delegate to get scanning result
@@ -193,9 +192,9 @@ KBeaconsMgr.KBeaconMgrDelegate beaconMgrExample = new KBeaconsMgr.KBeaconMgrDele
                             Log.v(LOG_TAG, "Sensor humidity:" + advSensor.getHumidity());
                         }
 
-                        //device that has cutoff sensor
-                        if (advSensor.getWatchCutoff() != null) {
-                            Log.v(LOG_TAG, "cutoff flag:" + advSensor.getWatchCutoff());
+                        //device that has alarm sensor(cutoff, door, parking sensor)
+                        if (advSensor.getAlarmStatus() != null) {
+                           Log.v(LOG_TAG, "alarm flag:" + advSensor.getAlarmStatus());
                         }
 
                         //device that has PIR sensor
@@ -232,6 +231,16 @@ KBeaconsMgr.KBeaconMgrDelegate beaconMgrExample = new KBeaconsMgr.KBeaconMgrDele
                         Log.v(LOG_TAG,"System model:" + advSystem.getModel());
                         Log.v(LOG_TAG,"System batt:" + advSystem.getBatteryPercent());
                         Log.v(LOG_TAG,"System ver:" + advSystem.getVersion());
+                        break;
+                    }
+
+                    //encrypt uuid advertisement
+                    case KBAdvType.EBeacon: {
+                        KBAdvPacketEBeacon encryptAdv = (KBAdvPacketEBeacon) advPacket;
+                        Log.v(LOG_TAG, "System mac:" + encryptAdv.getMac());
+                        Log.v(LOG_TAG, "Decrypt UUID:" + encryptAdv.getUuid());
+                        Log.v(LOG_TAG, "ADV UTC:" + encryptAdv.getUtcSecCount());
+                        Log.v(LOG_TAG, "Reference power:" + encryptAdv.getRefTxPower());
                         break;
                     }
 
@@ -1418,7 +1427,80 @@ public void setLightSensorMeasureParameters()
 }
 ```
 
-#### 4.3.5.3 Config disable period paramaters
+#### 4.3.5.3 Config parking sensor paramaters
+For the parking sensor, we can use this sensor to monitor if there is a vehicle parked at a specified location
+```Java
+
+//set parking idle
+//Parking sensors need to be marked before use. That is, when there is no parking, we need to set
+// the sensor to idle. The sensor detects if a vehicle is parked based on the status of the marker.
+public void setParkingIdleParameters()
+{
+    if (!mBeacon.isConnected())
+    {
+        toastShow("Device is not connected");
+        return;
+    }
+
+    //check device capability
+    KBCfgCommon oldCommonCfg = mBeacon.getCommonCfg();
+    if (oldCommonCfg != null && !oldCommonCfg.isSupportGEOSensor())
+    {
+        toastShow("Device does not supported parking sensors");
+        return;
+    }
+
+    KBCfgSensorGEO sensorGeoPara = new KBCfgSensorGEO();
+
+    //If this parameter is set to true, the sensor initiates the measurement
+    // and sets the current state to the idle parking state.
+    sensorGeoPara.setParkingTag(true);
+    mBeacon.modifyConfig(sensorGeoPara, new KBeacon.ActionCallback() {
+        @Override
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess)
+            {
+                toastShow("config data to beacon success");
+            }
+        }
+    });
+}
+
+//set parking sensor measure parameters
+public void setParkingSensorMeasureParameters()
+{
+    if (!mBeacon.isConnected())
+    {
+        toastShow("Device is not connected");
+        return;
+    }
+
+    KBCfgSensorGEO sensorGeoPara = new KBCfgSensorGEO();
+
+    //Set the geomagnetic offset value of the parking space occupancy relative to the idle parking space
+    //unit is mg
+    sensorGeoPara.setParkingThreshold(2000);
+
+    //If the setting continuously detects geomagnetic changes for more than 50 seconds,
+    //the device will generate a parking space occupancy event. the Delay unit is 10 seconds
+    sensorGeoPara.setParkingDelay(5);
+    mBeacon.modifyConfig(sensorGeoPara, new KBeacon.ActionCallback() {
+        @Override
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess)
+            {
+                toastShow("config data to beacon success");
+            }
+            else
+            {
+                toastShow("config failed for error:" + error.errorCode);
+            }
+        }
+    });
+}
+```
+
+#### 4.3.5.4 Config disable period paramaters
 For some sensors, we may not want it to work all the time, such as the Door sensor, we may only want it to work at night. The advantage of this is, the power consumption can be reduced, and the unnecessary trigger can also be reduced.
 The sensors model that support configuring a disable period include: S1(Door sensor), S2(PIR sensor).
 
@@ -1462,7 +1544,7 @@ public void setDoorDisablePeriod() {
 }
 ```
 
-#### 4.3.5.4 Other sensor paramaters
+#### 4.3.5.5 Other sensor paramaters
 Other sensors, such as PIR sensors and VOC sensors, have a similar method for setting parameters, and will not be given example here.
 ```Java
   //pir sensor
@@ -1945,6 +2027,7 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
+* 2024.9.3 v1.92: add parking sensor
 * 2024.1.20 v1.91 add AOA and tilt angle trigger
 * 2023.6.29 V1.9 add LED blink setting, add channel mask setting, support new humidity sensor
 * 2023.5.20 V1.8 Add VOC and sensor

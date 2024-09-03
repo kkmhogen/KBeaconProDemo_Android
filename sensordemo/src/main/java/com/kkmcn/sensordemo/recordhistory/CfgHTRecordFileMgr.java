@@ -2,8 +2,9 @@ package com.kkmcn.sensordemo.recordhistory;
 
 import android.content.Context;
 import android.util.Log;
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordBase;
+
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordHumidity;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordBase;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

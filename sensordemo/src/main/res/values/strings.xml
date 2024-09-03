@@ -333,4 +333,32 @@
     <string name="temp_humidity_sensor_trigger">Temperature&amp;humidity trigger</string>
 
     <string name="RECEIVE_NOTIFY_DATA">Receive T&amp;H notify data, utc:%1$s, temperature:%2$f, humidity: %3$f</string>
+
+    <string name="dfu_action_abort">Abort</string>
+    <string name="dfu_channel_description">Shows DFU progress.</string>
+    <string name="dfu_channel_name">DFU</string>
+    <string name="dfu_status_aborted">Aborted</string>
+    <string name="dfu_status_aborted_msg">Application upload has been canceled.</string>
+    <string name="dfu_status_aborting">Aborting…</string>
+    <string name="dfu_status_completed">Done</string>
+    <string name="dfu_status_completed_msg">Application has been sent successfully.</string>
+    <string name="dfu_status_connecting">Connecting…</string>
+    <string name="dfu_status_connecting_msg">Connecting to %s…</string>
+    <string name="dfu_status_disconnecting">Disconnecting…</string>
+    <string name="dfu_status_disconnecting_msg">Disconnecting from %s…</string>
+    <string name="dfu_status_error">Upload failed</string>
+    <string name="dfu_status_error_msg">DFU process failed.</string>
+    <string name="dfu_status_foreground_content">Update in progress…</string>
+    <string name="dfu_status_foreground_title">Device Firmware Update</string>
+    <string name="dfu_status_initializing">Initializing…</string>
+    <string name="dfu_status_starting">Starting DFU…</string>
+    <string name="dfu_status_starting_msg">Initializing DFU process…</string>
+    <string name="dfu_status_switching_to_dfu">Starting bootloader…</string>
+    <string name="dfu_status_switching_to_dfu_msg">Waiting for bootloader…</string>
+    <string name="dfu_status_uploading">Uploading…</string>
+    <string name="dfu_status_uploading_msg">Transmitting firmware to %s…</string>
+    <string name="dfu_status_uploading_part">Uploading part %d/%d…</string>
+    <string name="dfu_status_validating">Validating…</string>
+    <string name="dfu_status_validating_msg">Validating…</string>
+    <string name="dfu_unknown_name">unnamed device</string>
 </resources>

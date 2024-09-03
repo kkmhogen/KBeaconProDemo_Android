@@ -112,7 +112,6 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
         }
         mBeaconsMgr.delegate = this;
         //mBeaconsMgr.delegate = beaconMgrExample;
-        mBeaconsMgr.setScanMinRssiFilter(-40);
         mBeaconsMgr.setScanMode(KBeaconsMgr.SCAN_MODE_LOW_LATENCY);
 
         mListView = (ListView) findViewById(R.id.listview);
@@ -219,8 +218,8 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
                             }
 
                             //device that has cutoff sensor
-                            if (advSensor.getWatchCutoff() != null) {
-                                Log.v(LOG_TAG, "cutoff flag:" + advSensor.getWatchCutoff());
+                            if (advSensor.getAlarmStatus() != null) {
+                                Log.v(LOG_TAG, "cutoff flag:" + advSensor.getAlarmStatus());
                             }
 
                             //device that has PIR sensor

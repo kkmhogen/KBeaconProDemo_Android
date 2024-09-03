@@ -25,13 +25,12 @@ public class AppBaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //创建透明的ActionBar
+
         getWindow().requestFeature(Window.FEATURE_ACTION_BAR_OVERLAY);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+
         mActionBar = getSupportActionBar();
         if(mActionBar!=null){
-            mActionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor("#ffffff")));
-            mActionBar.setSplitBackgroundDrawable(new ColorDrawable(Color.parseColor("#cccccc")));
             mActionBar.setElevation(1);
             mActionBar.setDisplayHomeAsUpEnabled(true);
             mActionBar.setDisplayShowHomeEnabled(false);

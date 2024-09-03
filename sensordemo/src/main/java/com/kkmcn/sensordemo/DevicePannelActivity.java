@@ -23,6 +23,7 @@ import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvIBeacon;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorCO2;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorGEO;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorHT;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorLight;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorPIR;
@@ -36,8 +37,8 @@ import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerAction;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerAdvChgMode;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBTriggerType;
 import com.kkmcn.kbeaconlib2.KBConnState;
+import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordAlarm;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordBase;
-import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordCutoff;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordDataRsp;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordHumidity;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordInfoRsp;
@@ -46,7 +47,6 @@ import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordPIR;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBRecordVOC;
 import com.kkmcn.kbeaconlib2.KBSensorHistoryData.KBSensorReadOption;
 import com.kkmcn.kbeaconlib2.KBUtility;
-import com.kkmcn.kbeaconlib2.UTCTime;
 import com.kkmcn.sensordemo.dfulibrary.KBeaconDFUActivity;
 import com.kkmcn.sensordemo.recordhistory.CfgHTBeaconHistoryActivity;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgBase;
@@ -96,6 +96,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     private Button mRingButton;
     private String mNewPassword;
     SharePreferenceMgr mPref;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -177,7 +178,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         {
             mBeaconStatus.setText("Disconnected");
             menu.findItem(R.id.menu_connect).setEnabled(true);
-            menu.findItem(R.id.menu_connect).setVisible(true);
+//            menu.findItem(R.id.menu_connect).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
             menu.findItem(R.id.menu_connecting).setVisible(false);
             menu.findItem(R.id.menu_connecting).setActionView(null);
@@ -188,85 +189,52 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     @Override
     public void onClick(View v)
     {
-        switch (v.getId()) {
-            case R.id.readBtnTriggerPara:
-                readButtonTriggerPara();
-                break;
-
-            case R.id.enableBtnAdvTrigger:
-                enableButtonTriggerEvent2Adv();
-                break;
-
-            case R.id.enableBtnAppTrigger:
-                enableButtonTriggerEvent2App();
-                break;
-
+        int id = v.getId();
+        if (id == R.id.readBtnTriggerPara) {
+            readButtonTriggerPara();
+        }else if (id == R.id.enableBtnAdvTrigger) {
+            enableButtonTriggerEvent2Adv();
+        }else if (id == R.id.enableBtnAppTrigger) {
+            enableButtonTriggerEvent2App();
+        }else if (id == R.id.enableAccTrigger) {
             //acc trigger
-            case R.id.enableAccTrigger:
-                enableMotionTrigger();
-                break;
-
-            case R.id.disableAccAppTrigger:
-                disableMotionTrigger();
-                break;
-
+            enableMotionTrigger();
+        }else if (id == R.id.disableAccAppTrigger) {
+            disableMotionTrigger();
+        }else if (id == R.id.enableAccAdvertisement) {
             //ksensor advertisement
-            case R.id.enableAccAdvertisement:
-                enableAdvTypeIncludeAccXYZ();
-                break;
-
-            case R.id.enableTHAdvertisement:
-                enableAdvTypeIncludeAccTH();
-                break;
-
-            case R.id.viewTHDataHistory:
-                if (mBeacon.isConnected()) {
-                    KBCfgCommon commCfg = mBeacon.getCommonCfg();
-                    if (commCfg != null && commCfg.isSupportHumiditySensor())
-                    {
-                        Intent intent = new Intent(this, CfgHTBeaconHistoryActivity.class);
-                        intent.putExtra(CfgHTBeaconHistoryActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());   //field type
-                        startActivityForResult(intent, 1);
-                    }
-                    else
-                    {
-                        toastShow("not support humidity sensor");
-                    }
-                }
-                else
-                {
-                    toastShow("device not connected");
-                }
-                break;
-
-            //T&H trigger
-            case R.id.enableTHChangeTriggerEvtRpt2Adv:
-                enableTHTriggerEvtRpt2Adv();
-                break;
-
-            case R.id.enableTHChangeTriggerEvtRpt2App:
-                enableTHTriggerEvtRpt2App();
-                break;
-
-            case R.id.enablePeriodicallyTHDataToApp:
-                enableTHPeriodicallyTriggerRpt2App();
-                break;
-
-            //DFU service
-            case R.id.dfuDevice:
-                if (mBeacon.isConnected()) {
-                    final Intent intent = new Intent(this, KBeaconDFUActivity.class);
-                    intent.putExtra(KBeaconDFUActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());
+            enableAdvTypeIncludeAccXYZ();
+        }else if (id == R.id.enableTHAdvertisement) {
+            enableAdvTypeIncludeAccTH();
+        }else if (id == R.id.viewTHDataHistory) {
+            if (mBeacon.isConnected()) {
+                KBCfgCommon commCfg = mBeacon.getCommonCfg();
+                if (commCfg != null && commCfg.isSupportHumiditySensor()) {
+                    Intent intent = new Intent(this, CfgHTBeaconHistoryActivity.class);
+                    intent.putExtra(CfgHTBeaconHistoryActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());   //field type
                     startActivityForResult(intent, 1);
+                } else {
+                    toastShow("not support humidity sensor");
                 }
-                break;
-
-            case R.id.ringDevice:
-                ringDevice();
-                break;
-
-            default:
-                break;
+            } else {
+                toastShow("device not connected");
+            }
+        }else if (id == R.id.enableTHChangeTriggerEvtRpt2Adv) {
+            //T&H trigger
+            enableTHTriggerEvtRpt2Adv();
+        }else if (id == R.id.enableTHChangeTriggerEvtRpt2App) {
+            enableTHTriggerEvtRpt2App();
+        }else if (id == R.id.enablePeriodicallyTHDataToApp) {
+            enableTHPeriodicallyTriggerRpt2App();
+        }else if (id == R.id.dfuDevice) {
+            //DFU service
+            if (mBeacon.isConnected()) {
+                final Intent intent = new Intent(this, KBeaconDFUActivity.class);
+                intent.putExtra(KBeaconDFUActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());
+                startActivityForResult(intent, 1);
+            }
+        }else if (id == R.id.ringDevice) {
+            ringDevice();
         }
     }
 
@@ -665,11 +633,11 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
         if (oldCommonCfg != null && !oldCommonCfg.isSupportAccSensor())
         {
-            toastShow("The device does not support humidity");
+            toastShow("The device does not motion trigger");
             return;
         }
 
-        //set trigger adv slot information
+        // set trigger adv slot information
         final KBCfgAdvIBeacon triggerAdv = new KBCfgAdvIBeacon();
         triggerAdv.setSlotIndex(0);  //reuse previous slot
         triggerAdv.setAdvPeriod(200f);
@@ -680,7 +648,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         triggerAdv.setUuid("B9407F30-F5F8-466E-AFF9-25556B570002");
         triggerAdv.setMinorID(32);
         triggerAdv.setMinorID(10);
-
 
         //set trigger type
         KBCfgTriggerMotion motionTriggerPara = new KBCfgTriggerMotion();
@@ -1173,6 +1140,119 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                     }
                 });
     }
+	
+    //set parking sensor measure parameters
+    public void setParkingSensorMeasureParameters()
+    {
+        if (!mBeacon.isConnected())
+        {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        KBCfgCommon oldCommonCfg = mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportGEOSensor())
+        {
+            toastShow("Device does not supported parking sensors");
+            return;
+        }
+
+        KBCfgSensorGEO sensorGeoPara = new KBCfgSensorGEO();
+
+        //Set the geomagnetic offset value of the parking space occupancy relative to the idle parking space
+        //unit is mg
+        sensorGeoPara.setParkingThreshold(2000);
+
+        //If the setting continuously detects geomagnetic changes for more than 50 seconds,
+        //the device will generate a parking space occupancy event. the Delay unit is 10 seconds
+        sensorGeoPara.setParkingDelay(5);
+
+        //enable sensor advertisement
+        mBeacon.modifyConfig(sensorGeoPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess)
+                {
+                    toastShow("config data to beacon success");
+                }
+                else
+                {
+                    toastShow("config failed for error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+
+    //force sensor calibration
+    public void geomagneticCalibration() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+        if (!mBeacon.isConnected())
+        {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        KBCfgCommon oldCommonCfg = mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportGEOSensor())
+        {
+            toastShow("Device does not supported parking sensors");
+            return;
+        }
+
+        KBCfgSensorGEO sensorGeoPara = new KBCfgSensorGEO();
+
+        //If this parameter is set to true, the sensor initiates the mag sensor calibration
+        sensorGeoPara.setCalibration(true);
+
+        //enable sensor advertisement
+        mBeacon.modifyConfig(sensorGeoPara, (bConfigSuccess, error) -> {
+            if (bConfigSuccess)
+            {
+                toastShow("config data to beacon success");
+            }
+        });
+    }
+
+      //set parking idle
+    //Parking sensors need to be marked before use. That is, when there is no parking, we need to set
+    // the sensor to idle. The sensor detects if a vehicle is parked based on the status of the marker.
+    public void setParkingIdleParameters()
+    {
+        if (!mBeacon.isConnected())
+        {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        KBCfgCommon oldCommonCfg = mBeacon.getCommonCfg();
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportGEOSensor())
+        {
+            toastShow("Device does not supported parking sensors");
+            return;
+        }
+
+        KBCfgSensorGEO sensorGeoPara = new KBCfgSensorGEO();
+
+        //If this parameter is set to true, the sensor initiates the measurement
+        // and sets the current state to the idle parking state.
+        sensorGeoPara.setParkingTag(true);
+
+        //enable sensor advertisement
+        mBeacon.modifyConfig(sensorGeoPara, (bConfigSuccess, error) -> {
+            if (bConfigSuccess)
+            {
+                toastShow("config data to beacon success");
+            }
+        });
+    }
+
 
     //read battery percent when connected
     public void readBatteryPercent()
@@ -1202,8 +1282,9 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
-    //set door sensor disable period parameters
-    public void setDoorDisablePeriod() {
+
+    //set disable period parameters
+    public void setPIRDisablePeriod() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
             return;
@@ -1211,17 +1292,15 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         //check device capability
         final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
-        if (oldCommonCfg != null && !oldCommonCfg.isSupportCutoffSensor())
+        if (oldCommonCfg != null && !oldCommonCfg.isSupportPIRSensor())
         {
-            toastShow("device does not support door cutoff sensor");
+            toastShow("device does not support PIR sensor");
             return;
         }
 
         //enable PIR trigger
         KBCfgSensorBase sensorPara = new KBCfgSensorBase();
-        sensorPara.setSensorType(KBSensorType.Cutoff);
-
-        //sensor enable period
+        sensorPara.setSensorType(KBSensorType.PIR);
         KBTimeRange disablePeriod = new KBTimeRange();
         disablePeriod.localStartHour = 8;
         disablePeriod.localStartMinute = 0;
@@ -1269,7 +1348,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         sensorHTPara.setHumidityLogThreshold(30);
 
         //unit is 0.1 Celsius, if abs(current temperature - last saved temperature) > 0.5, then save new record
-        sensorHTPara.setHumidityLogThreshold(5);
+        sensorHTPara.setTemperatureLogThreshold(5);
 
         //enable sensor advertisement
         mBeacon.modifyConfig(sensorHTPara, new KBeacon.ActionCallback() {
@@ -1348,6 +1427,13 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         //check capability
         final KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getCommonCfg();
+        if (cfgCommon != null && !cfgCommon.isSupportBeep())
+        {
+            toastShow("device does not support ring feature");
+            return;
+        }
+
+        mRingButton.setEnabled(false);
         JSONObject cmdPara = new JSONObject();
         try {
             cmdPara.put("msg", "ring");
@@ -1390,9 +1476,10 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
+ 
     public void readCutoffHistoryInfoExample()
     {
-        mBeacon.readSensorDataInfo(KBSensorType.Cutoff, new KBeacon.ReadSensorInfoCallback() {
+        mBeacon.readSensorDataInfo(KBSensorType.Alarm, new KBeacon.ReadSensorInfoCallback() {
             @Override
             public void onReadComplete(boolean b, KBRecordInfoRsp infRsp, KBException e) {
                 if (b){
@@ -1507,7 +1594,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     //read door open/close history records
     public void readCutoffHistoryRecordExample()
     {
-        mBeacon.readSensorRecord(KBSensorType.Cutoff,
+        mBeacon.readSensorRecord(KBSensorType.Alarm,
                 KBRecordDataRsp.INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
                 KBSensorReadOption.NewRecord,  //read direction type
                 100,   //number of records the app want to read
@@ -1516,9 +1603,9 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                     {
                         for (KBRecordBase sensorRecord: dataRsp.readDataRspList)
                         {
-                            KBRecordCutoff record = (KBRecordCutoff)sensorRecord;
+                            KBRecordAlarm record = (KBRecordAlarm)sensorRecord;
                             Log.v(LOG_TAG, "record utc time:" + record.utcTime);
-                            Log.v(LOG_TAG, "record cut off Flag:" + record.cutoffFlag);
+                            Log.v(LOG_TAG, "record cut off Flag:" + record.alarmStatus);
                         }
                         if (dataRsp.readDataNextPos == KBRecordDataRsp.INVALID_DATA_RECORD_POS)
                         {
@@ -1661,7 +1748,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         //set trigger angle
         angleTrigger.setTriggerPara(45);        //set below angle threshold
         angleTrigger.setAboveAngle(90);         //set above angle threshold
-        angleTrigger.setReportInterval(1);   //set repeat report interval to 1 minutes
+        angleTrigger.setReportingInterval(1);   //set repeat report interval to 1 minutes
 
         mBeacon.modifyConfig(angleTrigger,
                 (bConfigSuccess, error) -> {

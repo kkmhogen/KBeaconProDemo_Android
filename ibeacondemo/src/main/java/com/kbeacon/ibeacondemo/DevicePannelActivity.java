@@ -144,25 +144,15 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     @Override
     public void onClick(View v)
     {
-        switch (v.getId()) {
-            case R.id.buttonSaveData:
-                updateViewToDevice();
-                break;
-
-
-            case R.id.enableBtnTrigger:
-                enableButtonTrigger();
-                break;
-
-            case R.id.beacon2TLM:
-                updateKBeaconToIBeaconAndTLM();
-                break;
-
-            case R.id.resetConfigruation:
-                resetParameters();
-                break;
-            default:
-                break;
+        int id = v.getId();
+        if (id == R.id.buttonSaveData) {
+            updateViewToDevice();
+        }else if (id == R.id.enableBtnTrigger) {
+            enableButtonTrigger();
+        }else if (id == R.id.beacon2TLM) {
+            updateKBeaconToIBeaconAndTLM();
+        }else if (id == R.id.resetConfigruation) {
+            resetParameters();
         }
     }
 

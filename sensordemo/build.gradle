@@ -1,15 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 32
-    buildToolsVersion '30.0.2'
+    compileSdk 34
     signingConfigs {
     }
 
     defaultConfig {
         applicationId 'com.kkmcn.sensordemo2'
-        minSdkVersion 21
-        targetSdkVersion 32
+        minSdkVersion 26
+        targetSdkVersion 34
     }
     buildTypes {
         release {
@@ -20,21 +19,17 @@ android {
     productFlavors {
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility "17"
+        targetCompatibility "17"
     }
-}
 
-repositories {
-    flatDir {
-        dirs 'libs'   // aar目录
-    }
+    namespace = "com.kkmcn.sensordemo"
 }
 
 dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'no.nordicsemi.android:dfu:2.0.3'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.7'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'no.nordicsemi.android:dfu:2.4.2'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.8'
 }

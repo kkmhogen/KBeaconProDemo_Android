@@ -269,28 +269,21 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_clear:
-            {
-                clearAllHistory();
-                break;
+        int id = item.getItemId();
+        if (id == R.id.menu_clear) {
+            clearAllHistory();
+        }else if (id == R.id.menu_export) {
+            String strHistoryContent = mRecordFileMgr.writeHistoryToString();
+            if (strHistoryContent == null) {
+                toastShow(getString(R.string.no_data_to_export));
+                return true;
             }
-
-            case R.id.menu_export:
-            {
-                String strHistoryContent = mRecordFileMgr.writeHistoryToString();
-                if (strHistoryContent == null){
-                    toastShow(getString(R.string.no_data_to_export));
-                    return true;
-                }
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                String strExportTitle = getString(R.string.EXPORT_HISTORY_DATA_EMAIL_TITLE, mBeacon.getMac());
-                intent.putExtra(Intent.EXTRA_SUBJECT, strExportTitle);
-                intent.setType("text/plain");
-                intent.putExtra(android.content.Intent.EXTRA_TEXT, strHistoryContent);
-                startActivity(Intent.createChooser(intent, "send to email"));
-                break;
-            }
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            String strExportTitle = getString(R.string.EXPORT_HISTORY_DATA_EMAIL_TITLE, mBeacon.getMac());
+            intent.putExtra(Intent.EXTRA_SUBJECT, strExportTitle);
+            intent.setType("text/plain");
+            intent.putExtra(android.content.Intent.EXTRA_TEXT, strHistoryContent);
+            startActivity(Intent.createChooser(intent, "send to email"));
         }
 
         return super.onOptionsItemSelected(item);

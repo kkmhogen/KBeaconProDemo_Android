@@ -39,6 +39,7 @@ import android.widget.TextView;
 
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAccSensorValue;
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketBase;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEBeacon;
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyTLM;
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyUID;
 import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyURL;
@@ -215,36 +216,21 @@ public class DeviceScanActivity extends AppBaseActivity implements View.OnClickL
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.btnRemoveAllFilter: {
-                mBtnFilterTotal.setText("");
-                mSeekBarRssi.setProgress(0);
-                mEditFltDevName.setText("");
-                mBtnRmvAllFilter.setVisibility(View.GONE);
-                enableFilterSetting();
-                break;
-            }
-
-            case R.id.imageButtonArrow:
-            {
-                checkDetailFilterDlg();
-                break;
-            }
-
-            case R.id.btnFilterInfo: {
-                checkDetailFilterDlg();
-                break;
-            }
-
-            case R.id.listview:
-            {
-                mBtnRmvAllFilter.setVisibility(View.GONE);
-            }
-
-            case R.id.btmRemoveFilterName: {
-                mEditFltDevName.setText("");
-                break;
-            }
+        int id = v.getId();
+        if (id == R.id.btnRemoveAllFilter){
+            mBtnFilterTotal.setText("");
+            mSeekBarRssi.setProgress(0);
+            mEditFltDevName.setText("");
+            mBtnRmvAllFilter.setVisibility(View.GONE);
+            enableFilterSetting();
+        }else if (id == R.id.imageButtonArrow) {
+            checkDetailFilterDlg();
+        }else if (id == R.id.btnFilterInfo) {
+            checkDetailFilterDlg();
+        }else if (id == R.id.listview) {
+            mBtnRmvAllFilter.setVisibility(View.GONE);
+        }else if (id == R.id.btmRemoveFilterName) {
+            mEditFltDevName.setText("");
         }
     }
 
@@ -397,9 +383,9 @@ public class DeviceScanActivity extends AppBaseActivity implements View.OnClickL
                             Log.v(LOG_TAG, "Sensor humidity:" + advSensor.getHumidity());
                         }
 
-                        //device that has cutoff sensor
-                        if (advSensor.getWatchCutoff() != null) {
-                            Log.v(LOG_TAG, "cutoff flag:" + advSensor.getWatchCutoff());
+                        //device that has alarm sensor(cutoff, door, parking sensor)
+                        if (advSensor.getAlarmStatus() != null) {
+                            Log.v(LOG_TAG, "alarm flag:" + advSensor.getAlarmStatus());
                         }
 
                         //device that has PIR sensor
@@ -433,6 +419,16 @@ public class DeviceScanActivity extends AppBaseActivity implements View.OnClickL
                         Log.v(LOG_TAG, "System model:" + advSystem.getModel());
                         Log.v(LOG_TAG, "System batt:" + advSystem.getBatteryPercent());
                         Log.v(LOG_TAG, "System ver:" + advSystem.getVersion());
+                        break;
+                    }
+
+                    //encrypt beacon
+                    case KBAdvType.EBeacon: {
+                        KBAdvPacketEBeacon encryptAdv = (KBAdvPacketEBeacon) advPacket;
+                        Log.v(LOG_TAG, "System mac:" + encryptAdv.getMac());
+                        Log.v(LOG_TAG, "Decrypt UUID:" + encryptAdv.getUuid());
+                        Log.v(LOG_TAG, "ADV UTC:" + encryptAdv.getUtcSecCount());
+                        Log.v(LOG_TAG, "Reference power:" + encryptAdv.getRefTxPower());
                         break;
                     }
 
@@ -524,7 +520,11 @@ public class DeviceScanActivity extends AppBaseActivity implements View.OnClickL
         {
             Log.v(TAG, "start scan success");
         }
-        else
+        else if (nStartScan == KBeaconsMgr.SCAN_ERROR_BLE_NOT_ENABLE)
+        {
+            toastShow("BLE function is not enable");
+        }
+        else if (nStartScan == KBeaconsMgr.SCAN_ERROR_UNKNOWN)
         {
             toastShow("Please make sure the app has BLE scan permission");
         }

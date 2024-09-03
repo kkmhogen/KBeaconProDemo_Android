@@ -255,18 +255,14 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_update:
-                if (!mInDfuState) {
-                    if (mFoundNewVersion) {
-                        makeSureUpdateSelection();
-                    } else {
-                        toastShow(getString(R.string.UPDATE_NOT_FOUND_NEW_VERSION));
-                    }
+        if (item.getItemId() == R.id.menu_update) {
+            if (!mInDfuState) {
+                if (mFoundNewVersion) {
+                    makeSureUpdateSelection();
+                } else {
+                    toastShow(getString(R.string.UPDATE_NOT_FOUND_NEW_VERSION));
                 }
-                break;
-            default:
-                break;
+            }
         }
         return super.onOptionsItemSelected(item);
     }
