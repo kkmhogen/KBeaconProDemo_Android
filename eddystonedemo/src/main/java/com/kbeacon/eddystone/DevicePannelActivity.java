@@ -248,7 +248,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             cfgComm.setName(strDeviceName);
             cfgList.add(cfgComm);
         }
-
+        
         if (mCheckboxUID.isChecked()){
             KBCfgAdvEddyUID eddyUIDCfg = new KBCfgAdvEddyUID();
             eddyUIDCfg.setSlotIndex(0);  //slot 0 adv

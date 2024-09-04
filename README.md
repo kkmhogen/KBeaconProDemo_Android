@@ -261,7 +261,12 @@ mBeaconsMgr.clearBeacons();
 ```
 If the app wants to stop scanning:
 ```Java
-mBeaconsMgr. stopScanning();
+mBeaconsMgr.stopScanning();
+```
+
+If the app wants to release KBeaconMgr:
+```Java
+KBeaconsMgr.clearBeaconManager();
 ```
 
 ### 4.2 Connect to device
@@ -720,9 +725,9 @@ void setSlot0AdvEncrypt()
 ```
 
 ##### 4.3.3.6 Intermittent advertisement
-In some cases, you may want Beacon to broadcast intermittently. For example, broadcasting for 10 seconds every 2 minutes.  
+In some cases, you may want Beacon to broadcast intermittently. For example, broadcasting for 5 seconds every 2 minutes.  
 ![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/periodic_adv.png?raw=true)  
-Example: Beacon broadcasts 5 seconds every 2 minutes in Slot1. The interval between broadcasts within 5 seconds is 1 second. That is, the Beacon sleeps for 115 seconds and then broadcasts for 5 seconds.
+Example: Beacon broadcasts 5 seconds every 2 minutes in Slot1. The advertisement interval is 1 second in advertisement period. That is, the Beacon sleeps for 115 seconds and then broadcasts for 5 seconds.
 ```Java
 void setSlot0PeriodicIBeaconAdv()
 {
