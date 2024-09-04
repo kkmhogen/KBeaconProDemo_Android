@@ -308,9 +308,11 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
-    //example: Set up a periodic broadcast for SLOT1, broadcasting every 2 minutes for a duration
-    // of 10 seconds with an interval of 1 second.
-    // Equivalent to the beacon sleeping for 110 seconds and then broadcasting for 10 seconds.
+    /**
+     *  Example: Beacon broadcasts 5 seconds every 2 minutes in Slot1.
+     *  The advertisement interval is 1 second in advertisement period.
+     *  That is, the Beacon sleeps for 115 seconds and then broadcasts for 5 seconds.
+     */
     void setSlot0PeriodicIBeaconAdv()
     {
         if (!mBeacon.isConnected())
@@ -321,14 +323,20 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         //check if KBeacon support long range or 2Mbps feature
         KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
-        if (cfgCommon == null || !cfgCommon.isSupportTrigger(KBTriggerType.PeriodicallyEvent)){
-            Log.v(LOG_TAG, "device does not support encrypt advertisement");
+        if (cfgCommon == null || !cfgCommon.isSupportIBeacon()){
+            Log.v(LOG_TAG, "device does not support iBeacon advertisement");
+            return;
+        }
+
+        if (!cfgCommon.isSupportTrigger(KBTriggerType.PeriodicallyEvent)){
+            Log.v(LOG_TAG, "device does not support Periodically Event");
             return;
         }
 
         // setting slot1 parameters.
         KBCfgAdvIBeacon periodicAdv = new KBCfgAdvIBeacon();
         periodicAdv.setSlotIndex(1);
+        //set adv period, unit is ms
         periodicAdv.setAdvPeriod(1000f);
         periodicAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
         periodicAdv.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
@@ -341,7 +349,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         KBCfgTrigger periodicTrigger = new KBCfgTrigger(0, KBTriggerType.PeriodicallyEvent);
         periodicTrigger.setTriggerAction(KBTriggerAction.Advertisement);
         periodicTrigger.setTriggerAdvSlot(1);  //trigger slot 1 advertisement
-        periodicTrigger.setTriggerAdvTime(10); //set adv duration to 10 seconds
+        periodicTrigger.setTriggerAdvTime(5); //set adv duration to 5 seconds
 
         //set trigger period, unit is ms
         periodicTrigger.setTriggerPara(120*1000);
