@@ -1423,6 +1423,9 @@ public void enableTiltAngleTrigger()
 }  
 ```
 
+#### 4.3.4.8 Periodically Trigger
+For some beacons, it can periodically send a trigger, which can trigger a broadcast, send a message to the app, or scan the peripheral Bluetooth device, and then carry the peripheral device in the broadcast message.
+
 #### 4.3.5 Sensor parameters
 If the device has sensors, such as temperature and humidity sensors, we may need to setting the sensor parameters, such as the measurement interval.  
 There are also some beacons, which can save sensor events to non-volatile memory, so that the app or gateway can obtain these historical records. Therefore, we may need to configure the conditions for recording events, such as recording an event when the temperature changes by more than 3 degrees.
