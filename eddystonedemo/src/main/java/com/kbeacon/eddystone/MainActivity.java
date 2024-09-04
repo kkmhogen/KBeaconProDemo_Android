@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.kbeacon.ibeacondemo;
+package com.kbeacon.eddystone;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.bluetooth.le.ScanSettings;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -30,48 +31,39 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAccSensorValue;
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketBase;
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyTLM;
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyUID;
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyURL;
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketIBeacon;
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketSensor;
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketSystem;
-import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvType;
-import com.kkmcn.kbeaconlib2.KBeacon;
-import com.kkmcn.kbeaconlib2.KBeaconsMgr;
 import java.util.HashMap;
-import java.util.Locale;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.core.app.ActivityCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketBase;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketEddyTLM;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvPacketIBeacon;
+import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvType;
+import com.kkmcn.kbeaconlib2.KBeacon;
+import com.kkmcn.kbeaconlib2.KBeaconsMgr;
+
 
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
-public class DeviceScanActivity extends AppBaseActivity implements AdapterView.OnItemClickListener,
-        KBeaconsMgr.KBeaconMgrDelegate, LeDeviceListAdapter.ListDataSource{
-	private final static String TAG = "Beacon.ScanAct";//DeviceScanActivity.class.getSimpleName();
+public class MainActivity extends AppBaseActivity implements AdapterView.OnItemClickListener,
+       LeDeviceListAdapter.ListDataSource{
+	private final static String LOG_TAG = "BeaconScanning";//DeviceScanActivity.class.getSimpleName();
 
     private ListView mListView;
     private LeDeviceListAdapter mDevListAdapter;
     private SwipeRefreshLayout swipeRefreshLayout;
     private int mScanFailedContinueNum = 0;
 
-    private static String LOG_TAG = "DeviceScanActivity";
-
     private final static int  MAX_ERROR_SCAN_NUMBER = 2;
     private HashMap<String, KBeacon> mBeaconsDictory;
     private KBeacon[] mBeaconsArray;
     private KBeaconsMgr mBeaconsMgr;
-
     private static final int PERMISSION_COARSE_LOCATION = 22;
     private static final int PERMISSION_FINE_LOCATION = 23;
     private static final int PERMISSION_SCAN = 24;
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
@@ -94,7 +86,7 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.main_activity);
+        setContentView(R.layout.activity_main);
         ActionBar actionBar = getSupportActionBar();
         if(actionBar!=null){
             actionBar.setDisplayHomeAsUpEnabled(false);
@@ -103,24 +95,25 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
 
         mBeaconsDictory = new HashMap<>(50);
 
+        //get KBeacon central manager instance
         mBeaconsMgr = KBeaconsMgr.sharedBeaconManager(this);
         if (mBeaconsMgr == null)
         {
-            toastShow("make sure the phone has support ble funtion");
-            finish();
+            toastShow("Make sure the phone supports BLE funtion");
             return;
         }
-        mBeaconsMgr.delegate = this;
-        //mBeaconsMgr.delegate = beaconMgrExample;
+        mBeaconsMgr.delegate = beaconMgrDeletate;
+
+        //set scanning mode
         mBeaconsMgr.setScanMode(KBeaconsMgr.SCAN_MODE_LOW_LATENCY);
 
+        //set scanning filter
         mListView = (ListView) findViewById(R.id.listview);
         mDevListAdapter = new LeDeviceListAdapter(this, getApplicationContext());
         mListView.setAdapter(mDevListAdapter);
         mListView.setOnItemClickListener(this);
 
         swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swipe_container);
-        //设置刷新时动画的颜色，可以设置4个
         swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_light, android.R.color.holo_red_light, android.R.color.holo_orange_light, android.R.color.holo_green_light);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
 
@@ -135,7 +128,7 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
                         swipeRefreshLayout.setRefreshing(false);
                         if (mScanFailedContinueNum >= MAX_ERROR_SCAN_NUMBER) {
                             mScanFailedContinueNum = 0;
-                            new AlertDialog.Builder(DeviceScanActivity.this)
+                            new AlertDialog.Builder(MainActivity.this)
                                     .setTitle(R.string.common_error_title)
                                     .setMessage(R.string.bluetooth_error_need_reboot)
                                     .setPositiveButton(R.string.Dialog_OK, null)
@@ -157,107 +150,50 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
         mBeaconsMgr.clearBeacons();
     }
 
-    public void onBeaconDiscovered(KBeacon[] beacons)
+    KBeaconsMgr.KBeaconMgrDelegate beaconMgrDeletate = new KBeaconsMgr.KBeaconMgrDelegate()
     {
-        for (KBeacon pBeacons: beacons)
-        {
-            mBeaconsDictory.put(pBeacons.getMac(), pBeacons);
-        }
-        if (mBeaconsDictory.size() > 0) {
-            mBeaconsArray = new KBeacon[mBeaconsDictory.size()];
-            mBeaconsDictory.values().toArray(mBeaconsArray);
-            mDevListAdapter.notifyDataSetChanged();
-        }
-    }
-
-    //example for print all scanned packet
-    KBeaconsMgr.KBeaconMgrDelegate beaconMgrExample = new KBeaconsMgr.KBeaconMgrDelegate() {
         //get advertisement packet during scanning callback
-        public void onBeaconDiscovered(KBeacon[] beacons) {
-            for (KBeacon beacon : beacons) {
+        public void onBeaconDiscovered(KBeacon[] beacons)
+        {
+            for (KBeacon beacon: beacons)
+            {
                 //get beacon adv common info
                 Log.v(LOG_TAG, "beacon mac:" + beacon.getMac());
                 Log.v(LOG_TAG, "beacon name:" + beacon.getName());
-                Log.v(LOG_TAG, "beacon rssi:" + beacon.getRssi());
+                Log.v(LOG_TAG,"beacon rssi:" + beacon.getRssi());
 
                 //get adv packet
-                for (KBAdvPacketBase advPacket : beacon.allAdvPackets()) {
-                    switch (advPacket.getAdvType()) {
-                        case KBAdvType.IBeacon: {
-                            KBAdvPacketIBeacon advIBeacon = (KBAdvPacketIBeacon) advPacket;
-                            Log.v(LOG_TAG, "iBeacon uuid:" + advIBeacon.getUuid());
-                            Log.v(LOG_TAG, "iBeacon major:" + advIBeacon.getMajorID());
-                            Log.v(LOG_TAG, "iBeacon minor:" + advIBeacon.getMinorID());
+                for (KBAdvPacketBase advPacket : beacon.allAdvPackets())
+                {
+                    switch (advPacket.getAdvType())
+                    {
+                        case KBAdvType.IBeacon:
+                        {
+                            KBAdvPacketIBeacon advIBeacon = (KBAdvPacketIBeacon)advPacket;
+                            Log.v(LOG_TAG,"iBeacon uuid:" + advIBeacon.getUuid());
+                            Log.v(LOG_TAG,"iBeacon major:" + advIBeacon.getMajorID());
+                            Log.v(LOG_TAG,"iBeacon minor:" + advIBeacon.getMinorID());
                             break;
                         }
 
-                        case KBAdvType.EddyTLM: {
-                            KBAdvPacketEddyTLM advTLM = (KBAdvPacketEddyTLM) advPacket;
-                            Log.v(LOG_TAG, "TLM battery:" + advTLM.getBatteryLevel());
-                            Log.v(LOG_TAG, "TLM Temperature:" + advTLM.getTemperature());
-                            Log.v(LOG_TAG, "TLM adv count:" + advTLM.getAdvCount());
+                        case KBAdvType.EddyTLM:
+                        {
+                            KBAdvPacketEddyTLM advTLM = (KBAdvPacketEddyTLM)advPacket;
+                            Log.v(LOG_TAG,"TLM battery:" + advTLM.getBatteryLevel());
+                            Log.v(LOG_TAG,"TLM Temperature:" + advTLM.getTemperature());
+                            Log.v(LOG_TAG,"TLM adv count:" + advTLM.getAdvCount());
                             break;
                         }
-
-                        case KBAdvType.Sensor: {
-                            KBAdvPacketSensor advSensor = (KBAdvPacketSensor) advPacket;
-                            Log.v(LOG_TAG, "Sensor battery:" + advSensor.getBatteryLevel());
-                            Log.v(LOG_TAG, "Sensor temp:" + advSensor.getTemperature());
-
-                            //device that has acc sensor
-                            KBAccSensorValue accPos = advSensor.getAccSensor();
-                            if (accPos != null) {
-                                String strAccValue = String.format(Locale.ENGLISH, "x:%d; y:%d; z:%d",
-                                        accPos.xAis, accPos.yAis, accPos.zAis);
-                                Log.v(LOG_TAG, "Sensor Acc:" + strAccValue);
-                            }
-
-                            //device that has humidity sensor
-                            if (advSensor.getHumidity() != null) {
-                                Log.v(LOG_TAG, "Sensor humidity:" + advSensor.getHumidity());
-                            }
-
-                            //device that has cutoff sensor
-                            if (advSensor.getAlarmStatus() != null) {
-                                Log.v(LOG_TAG, "cutoff flag:" + advSensor.getAlarmStatus());
-                            }
-
-                            //device that has PIR sensor
-                            if (advSensor.getPirIndication() != null) {
-                                Log.v(LOG_TAG, "pir indication:" + advSensor.getPirIndication());
-                            }
-                            break;
-                        }
-
-                        case KBAdvType.EddyUID: {
-                            KBAdvPacketEddyUID advUID = (KBAdvPacketEddyUID) advPacket;
-                            Log.v(LOG_TAG, "UID Nid:" + advUID.getNid());
-                            Log.v(LOG_TAG, "UID Sid:" + advUID.getSid());
-                            break;
-                        }
-
-                        case KBAdvType.EddyURL: {
-                            KBAdvPacketEddyURL advURL = (KBAdvPacketEddyURL) advPacket;
-                            Log.v(LOG_TAG, "URL:" + advURL.getUrl());
-                            break;
-                        }
-
-                        case KBAdvType.System: {
-                            KBAdvPacketSystem advSystem = (KBAdvPacketSystem) advPacket;
-                            Log.v(LOG_TAG, "System mac:" + advSystem.getMacAddress());
-                            Log.v(LOG_TAG, "System model:" + advSystem.getModel());
-                            Log.v(LOG_TAG, "System batt:" + advSystem.getBatteryPercent());
-                            Log.v(LOG_TAG, "System ver:" + advSystem.getVersion());
-                            break;
-                        }
-
-                        default:
-                            break;
                     }
                 }
 
-                //clear all buffered packet
-                beacon.removeAdvPacket();
+                mBeaconsDictory.put(beacon.getMac(), beacon);
+            }
+
+            if (mBeaconsDictory.size() > 0) {
+                mBeaconsArray = new KBeacon[mBeaconsDictory.size()];
+                mBeaconsDictory.values().toArray(mBeaconsArray);
+                mDevListAdapter.notifyDataSetChanged();
             }
         }
 
@@ -283,20 +219,6 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
         }
     };
 
-    public void onCentralBleStateChang(int nNewState)
-    {
-        Log.e(TAG, "centralBleStateChang：" + nNewState);
-    }
-
-    public void onScanFailed(int errorCode)
-    {
-        Log.e(TAG, "Start N scan failed：" + errorCode);
-        if (mScanFailedContinueNum >= MAX_ERROR_SCAN_NUMBER){
-            toastShow("scan encount error, error time:" + mScanFailedContinueNum);
-        }
-        mScanFailedContinueNum++;
-    }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -315,10 +237,10 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-        Log.e(TAG, "click id:" + id );
+        Log.e(LOG_TAG, "click id:" + id );
         KBeacon beacon = getBeaconDevice(position);
         if (beacon != null) {
-            final Intent intent = new Intent(DeviceScanActivity.this, DevicePannelActivity.class);
+            final Intent intent = new Intent(MainActivity.this, DevicePannelActivity.class);
             intent.putExtra(DevicePannelActivity.DEVICE_MAC_ADDRESS, beacon.getMac());
             startActivity(intent);
         }
@@ -360,11 +282,10 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
             return;
         }
 
-        //mBeaconsMgr.setScanMinRssiFilter(-60);
         int nStartScan = mBeaconsMgr.startScanning();
         if (nStartScan == 0)
         {
-            Log.v(TAG, "start scan success");
+            Log.v(LOG_TAG, "start scan success");
         }
         else if (nStartScan == KBeaconsMgr.SCAN_ERROR_BLE_NOT_ENABLE) {
             toastShow("BLE function is not enable");

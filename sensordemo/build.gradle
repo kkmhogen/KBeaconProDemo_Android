@@ -6,7 +6,7 @@ android {
     }
 
     defaultConfig {
-        applicationId 'com.kkmcn.sensordemo2'
+        applicationId 'com.kkmcn.sensordemo'
         minSdkVersion 26
         targetSdkVersion 34
     }

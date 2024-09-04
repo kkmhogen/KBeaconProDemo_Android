@@ -29,7 +29,7 @@ If you are using KBeacon for sensors, such as temperature, humidity, and motion 
 ## 3. Import SDK to project
 Development environment:  
 Android Studio  
-minSdkVersion 21
+minSdkVersion 24
 
 1. The kbeaconlib library can be found on maven repository. Add it to your application project by adding the following dependency in your build.gradle:
 
@@ -70,9 +70,8 @@ buildscript {
 ## 4. How to use SDK
 ### 4.1 Scanning device
 1. Init KBeaconMgr instance in Activity, also your application should implementation the scanning callback.
-
 ```Java
-@Override
+//init instance
 public void onCreate(Bundle savedInstanceState) {
 	//other code...
 	//get KBeacon central manager instance
@@ -112,7 +111,6 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, xx);
     }
 }
-
 ```
 
 3. Start scanning
@@ -271,7 +269,6 @@ mBeaconsMgr. stopScanning();
  ```Java
  //connect to device with default parameters
 mBeacon.connect(password, max_timeout, connectionDelegate);
-
 //or
 //connect to device with specified parameters
 //When the app is connected to the KBeacon device, the app can specify which the configuration parameters to be read,
@@ -361,7 +358,6 @@ private KBeacon.ConnStateDelegate connectionDelegate = new KBeacon.ConnStateDele
         }
     }
 };
-
 //update device's configuration to UI
 public void updateDeviceToView()
 {
@@ -675,7 +671,108 @@ void updateKBeaconToUID()
 }
 ```
 
-##### 4.3.3.4 Check if parameters are changed
+##### 4.3.3.4 Encrypted advertisement
+In some special cases, we may need to encrypt broadcast packets. Prevent third-party copies of counterfeit beacons. In addition, we may also need to encrypt broadcast content.
+By setting the broadcast type to EBeacon, we can encrypt the UUID, and the AES key will dynamically change according to the UTC time, so it can prevent copying and decryption.
+
+```Java
+void setSlot0AdvEncrypt()
+{
+    if (!mBeacon.isConnected())
+    {
+        Log.v(LOG_TAG, "device was disconnected");
+        return;
+    }
+
+    //check if KBeacon support long range or 2Mbps feature
+    KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+    if (cfgCommon == null || !cfgCommon.isSupportEBeacon()){
+        Log.v(LOG_TAG, "device does not support encrypt advertisement");
+        return;
+    }
+
+    //set basic parameters.
+    KBCfgAdvEBeacon encAdv = new KBCfgAdvEBeacon();
+    encAdv.setSlotIndex(0);
+    encAdv.setAdvPeriod(1000f);
+    encAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
+
+    //set the UUID that to be encrypt
+    encAdv.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
+
+    //Set the AES KEY to change every 5 seconds.
+    encAdv.setInterval(5);
+
+    //set aes type to 0(ECB)
+    encAdv.setAesType(KBCfgAdvEBeacon.AES_ECB_TYPE);
+
+    mBeacon.modifyConfig(encAdv, (bConfigSuccess, error) -> {
+        if (bConfigSuccess)
+        {
+            toastShow("Enable encrypt advertisement success");
+        }
+        else
+        {
+            toastShow("Enable encrypt advertisement failed:" + error.errorCode);
+        }
+    });
+}
+```
+
+##### 4.3.3.6 Intermittent advertisement
+In some cases, you may want Beacon to broadcast intermittently. For example, broadcasting for 10 seconds every 2 minutes.  
+![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/periodic_adv.png?raw=true)  
+Example: Beacon broadcasts 5 seconds every 2 minutes in Slot1. The interval between broadcasts within 5 seconds is 1 second. That is, the Beacon sleeps for 115 seconds and then broadcasts for 5 seconds.
+```Java
+void setSlot0PeriodicIBeaconAdv()
+{
+    if (!mBeacon.isConnected())
+    {
+        Log.v(LOG_TAG, "device was disconnected");
+        return;
+    }
+
+    //check if KBeacon support long range or 2Mbps feature
+    KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+    if (cfgCommon == null || !cfgCommon.isSupportEBeacon()){
+        Log.v(LOG_TAG, "device does not support encrypt advertisement");
+        return;
+    }
+
+    // setting slot1 parameters.
+    KBCfgAdvIBeacon periodicAdv = new KBCfgAdvIBeacon();
+    periodicAdv.setSlotIndex(1);
+    periodicAdv.setAdvPeriod(1000f);
+    periodicAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
+    periodicAdv.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
+
+    //This parameter is very important, indicating that slot1 does
+    // not broadcast by default and only broadcasts when triggered by a Trigger.
+    periodicAdv.setAdvTriggerOnly(true);
+
+    //add periodically trigger
+    KBCfgTrigger periodicTrigger = new KBCfgTrigger(0, KBTriggerType.PeriodicallyEvent);
+    periodicTrigger.setTriggerAction(KBTriggerAction.Advertisement);
+    periodicTrigger.setTriggerAdvSlot(1);  //trigger slot 1 advertisement
+    periodicTrigger.setTriggerAdvTime(5); //set adv duration to 5 seconds
+
+    ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+    cfgList.add(periodicAdv);
+    cfgList.add(periodicTrigger);
+    mBeacon.modifyConfig(cfgList, (bConfigSuccess, error) -> {
+        if (bConfigSuccess)
+        {
+            toastShow("Enable periodically advertisement success");
+        }
+        else
+        {
+            toastShow("Enable periodically advertisement failed:" + error.errorCode);
+        }
+    });
+}
+```
+
+##### 4.3.3.6 Check if parameters are changed
 Sometimes, in order to reduce the time for configuration, The app can only sending the modified parameters.
 
 Example: checking if the parameters was changed, then send new parameters to device.

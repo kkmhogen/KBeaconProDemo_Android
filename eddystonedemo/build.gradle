@@ -6,7 +6,7 @@ android {
     }
 
     defaultConfig {
-        applicationId 'com.kbeacon.ibeacondemo'
+        applicationId 'com.kbeacon.eddystone'
         minSdkVersion 26
         targetSdkVersion 34
     }
@@ -23,7 +23,7 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    namespace = "com.kbeacon.ibeacondemo"
+    namespace = "com.kbeacon.eddystone"
 }
 
 dependencies {
@@ -33,3 +33,4 @@ dependencies {
     implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.8'
     implementation 'no.nordicsemi.android:dfu:2.4.2'
 }
+

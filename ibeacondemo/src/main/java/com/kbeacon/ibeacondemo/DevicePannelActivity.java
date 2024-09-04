@@ -19,6 +19,7 @@ import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvType;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBAdvMode;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBAdvTxPower;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvBase;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvEBeacon;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvEddyTLM;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvEddyUID;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvEddyURL;
@@ -303,6 +304,102 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 {
                     toastShow("config failed for error:" + error.errorCode);
                 }
+            }
+        });
+    }
+
+    //example: Set up a periodic broadcast for SLOT1, broadcasting every 2 minutes for a duration
+    // of 10 seconds with an interval of 1 second.
+    // Equivalent to the beacon sleeping for 110 seconds and then broadcasting for 10 seconds.
+    void setSlot0PeriodicIBeaconAdv()
+    {
+        if (!mBeacon.isConnected())
+        {
+            Log.v(LOG_TAG, "device was disconnected");
+            return;
+        }
+
+        //check if KBeacon support long range or 2Mbps feature
+        KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+        if (cfgCommon == null || !cfgCommon.isSupportTrigger(KBTriggerType.PeriodicallyEvent)){
+            Log.v(LOG_TAG, "device does not support encrypt advertisement");
+            return;
+        }
+
+        // setting slot1 parameters.
+        KBCfgAdvIBeacon periodicAdv = new KBCfgAdvIBeacon();
+        periodicAdv.setSlotIndex(1);
+        periodicAdv.setAdvPeriod(1000f);
+        periodicAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
+        periodicAdv.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
+
+        //This parameter is very important, indicating that slot1 does
+        // not broadcast by default and only broadcasts when triggered by a Trigger.
+        periodicAdv.setAdvTriggerOnly(true);
+
+        //add periodically trigger
+        KBCfgTrigger periodicTrigger = new KBCfgTrigger(0, KBTriggerType.PeriodicallyEvent);
+        periodicTrigger.setTriggerAction(KBTriggerAction.Advertisement);
+        periodicTrigger.setTriggerAdvSlot(1);  //trigger slot 1 advertisement
+        periodicTrigger.setTriggerAdvTime(10); //set adv duration to 10 seconds
+
+        //set trigger period, unit is ms
+        periodicTrigger.setTriggerPara(120*1000);
+
+        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+        cfgList.add(periodicAdv);
+        cfgList.add(periodicTrigger);
+        mBeacon.modifyConfig(cfgList, (bConfigSuccess, error) -> {
+            if (bConfigSuccess)
+            {
+                toastShow("Enable periodically advertisement success");
+            }
+            else
+            {
+                toastShow("Enable periodically advertisement failed:" + error.errorCode);
+            }
+        });
+    }
+
+    //example: set device broadcasting encrypt UUID
+    void setSlot0AdvEncrypt()
+    {
+        if (!mBeacon.isConnected())
+        {
+            Log.v(LOG_TAG, "device was disconnected");
+            return;
+        }
+
+        //check if KBeacon support long range or 2Mbps feature
+        KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+        if (cfgCommon == null || !cfgCommon.isSupportEBeacon()){
+            Log.v(LOG_TAG, "device does not support encrypt advertisement");
+            return;
+        }
+
+        //set basic parameters.
+        KBCfgAdvEBeacon encAdv = new KBCfgAdvEBeacon();
+        encAdv.setSlotIndex(0);
+        encAdv.setAdvPeriod(1000f);
+        encAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
+
+        //set the UUID that to be encrypt
+        encAdv.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
+
+        //Set the AES KEY to change every 5 seconds.
+        encAdv.setInterval(5);
+
+        //set aes type to 0(ECB)
+        encAdv.setAesType(KBCfgAdvEBeacon.AES_ECB_TYPE);
+
+        mBeacon.modifyConfig(encAdv, (bConfigSuccess, error) -> {
+            if (bConfigSuccess)
+            {
+                toastShow("Enable encrypt advertisement success");
+            }
+            else
+            {
+                toastShow("Enable encrypt advertisement failed:" + error.errorCode);
             }
         });
     }
@@ -774,8 +871,11 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 mEditBeaconUUID.setText(iBeaconPara.getUuid());
                 mEditBeaconMajor.setText(String.valueOf(iBeaconPara.getMajorID()));
                 mEditBeaconMinor.setText(String.valueOf(iBeaconPara.getMinorID()));
-                mEditBeaconAdvPeriod.setText(String.valueOf(slot0Adv.getAdvPeriod()));
-                mEditBeaconTxPower.setText(String.valueOf(slot0Adv.getTxPower()));
+
+                if (slot0Adv != null) {
+                    mEditBeaconAdvPeriod.setText(String.valueOf(slot0Adv.getAdvPeriod()));
+                    mEditBeaconTxPower.setText(String.valueOf(slot0Adv.getTxPower()));
+                }
             }
         }
     }

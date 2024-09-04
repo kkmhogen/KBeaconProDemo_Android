@@ -1,1 +1,1 @@
-include ':ibeacondemo',':sensordemo'
+include ':ibeacondemo',':sensordemo',':eddystonedemo'

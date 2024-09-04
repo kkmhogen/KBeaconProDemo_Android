@@ -2,6 +2,7 @@ package com.kkmcn.sensordemo;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -20,6 +21,8 @@ import com.kkmcn.kbeaconlib2.KBAdvPackage.KBAdvType;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBAdvMode;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBAdvTxPower;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvBase;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvEddyTLM;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvEddyUID;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgAdvIBeacon;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorBase;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorCO2;
