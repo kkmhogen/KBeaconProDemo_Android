@@ -1441,7 +1441,7 @@ public void enableTiltAngleTrigger()
 #### 4.3.4.8 Periodically Trigger
 For some beacons, it can periodically send a trigger, which can trigger a broadcast, send a message to the app, or scan the peripheral Bluetooth device, and then carry the peripheral device in the broadcast message.
 ```Java
-public void enableRepeaterScanner()
+public void enablePeriodicallyAdv()
 {
     //check capability
     final KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
