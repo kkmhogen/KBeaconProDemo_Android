@@ -30,6 +30,7 @@ import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorGEO;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorHT;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorLight;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorPIR;
+import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorScan;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgSensorVOC;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTrigger;
 import com.kkmcn.kbeaconlib2.KBCfgPackage.KBCfgTriggerAngle;
@@ -237,7 +238,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 startActivityForResult(intent, 1);
             }
         }else if (id == R.id.ringDevice) {
-            ringDevice();
+           ringDevice();
         }
     }
 
@@ -1762,6 +1763,60 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                     else
                     {
                         Log.v(LOG_TAG, "Enable angle trigger failed");
+                    }
+                });
+    }
+
+    //set repeater scanning
+    public void enableRepeaterScanner()
+    {
+        //check capability
+        final KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+        if (!cfgCommon.isSupportTrigger(KBTriggerType.PeriodicallyEvent)
+                || !cfgCommon.isSupportScanSensor())
+        {
+            toastShow("device does not support repeat scanning");
+            return;
+        }
+
+        //set scanner parameters
+        KBCfgSensorScan scanPara = new KBCfgSensorScan();
+        scanPara.setScanDuration(100); //set scan duration 1seconds, unit is 10 ms
+        scanPara.setScanMode(KBAdvMode.Legacy); //only scan BLE4.0 legacy advertisement
+        scanPara.setScanRssi(-80); //Scan devices with signals greater than -80dBm
+        //The maximum number of peripheral devices during each scan
+        // When the number of devices scanned exceed 20, then stop scanning.
+        scanPara.setScanMax(20);
+
+        // Set a Trigger to periodically trigger scanning
+        KBCfgTrigger periodicTrigger = new KBCfgTrigger(0, KBTriggerType.PeriodicallyEvent);
+
+        //When a trigger occurs, it triggers a BLE scan and carries the scanned parameters in the broadcast.
+        periodicTrigger.setTriggerAction(KBTriggerAction.BLEScan | KBTriggerAction.Advertisement);
+        periodicTrigger.setTriggerAdvSlot(0);
+        periodicTrigger.setTriggerAdvPeriod(500f);
+        periodicTrigger.setTriggerAdvTime(10);
+        periodicTrigger.setTriggerTxPower(0);
+
+        //When a trigger occurs, change the UUID to carry the MAC address of the scanned peripheral device.
+        periodicTrigger.setTriggerAdvChangeMode(KBTriggerAdvChgMode.KBTriggerAdvChangeModeUUID);
+
+        //Set to start scanning every 60 seconds, unit is ms
+        periodicTrigger.setTriggerPara(60*1000);
+
+        ArrayList<KBCfgBase> triggerPara = new ArrayList<>(2);
+        triggerPara.add(scanPara);
+        triggerPara.add(periodicTrigger);
+
+        mBeacon.modifyConfig(triggerPara,
+                (bConfigSuccess, error) -> {
+                    if (bConfigSuccess)
+                    {
+                        toastShow("Enable periodic scanning success");
+                    }
+                    else
+                    {
+                        toastShow("Enable periodic scanning failed");
                     }
                 });
     }

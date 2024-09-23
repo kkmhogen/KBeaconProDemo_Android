@@ -1430,7 +1430,42 @@ public void enableTiltAngleTrigger()
 
 #### 4.3.4.8 Periodically Trigger
 For some beacons, it can periodically send a trigger, which can trigger a broadcast, send a message to the app, or scan the peripheral Bluetooth device, and then carry the peripheral device in the broadcast message.
+```Java
+public void enableRepeaterScanner()
+{
+    //check capability
+    final KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+    if (!cfgCommon.isSupportTrigger(KBTriggerType.PeriodicallyEvent))
+    {
+        toastShow("device does not support periodically trigger");
+        return;
+    }
 
+    // Set a Trigger to periodically trigger scanning
+    KBCfgTrigger periodicTrigger = new KBCfgTrigger(0, KBTriggerType.PeriodicallyEvent);
+
+    //When a trigger occurs, it start advetisement 2 seconds
+    periodicTrigger.setTriggerAction(KBTriggerAction.Advertisement);
+    periodicTrigger.setTriggerAdvSlot(0);
+    periodicTrigger.setTriggerAdvPeriod(200f);
+    periodicTrigger.setTriggerAdvTime(2);
+    periodicTrigger.setTriggerTxPower(0);
+
+    //Set to start scanning every 60 seconds, unit is ms
+    periodicTrigger.setTriggerPara(120*1000);
+    mBeacon.modifyConfig(periodicTrigger,
+            (bConfigSuccess, error) -> {
+                if (bConfigSuccess)
+                {
+                    toastShow("Enable periodic advertisement success");
+                }
+                else
+                {
+                    toastShow("Enable periodic advertisement failed");
+                }
+            });
+}
+```
 #### 4.3.5 Sensor parameters
 If the device has sensors, such as temperature and humidity sensors, we may need to setting the sensor parameters, such as the measurement interval.  
 There are also some beacons, which can save sensor events to non-volatile memory, so that the app or gateway can obtain these historical records. Therefore, we may need to configure the conditions for recording events, such as recording an event when the temperature changes by more than 3 degrees.
@@ -1605,7 +1640,67 @@ public void setParkingSensorMeasureParameters()
 }
 ```
 
-#### 4.3.5.4 Config disable period paramaters
+#### 4.3.5.4 Config repeater scanning sensor  
+The repeater solution refers to Beacon's support for scanning surrounding Beacon while broadcasting iBeacon. When Beacon signals from surrounding devices are scanned, the ID of the surrounding Beacon can be carried in the broadcast message and sent to the Gateway. This approach has the following advantages:
+* Expand the positioning range of Beacon. Beacons in weak indoor coverage areas may not be scanned by the gateway. Other beacons will act as repeaters to send the signal of that beacon to the gateway. The gateway can locate the Beacon in weak coverage areas.
+* Increase the positioning accuracy of Beacon. Multiple Anchor Beacons can be deployed in fixed locations, and mobile Beacons can periodically scan for Anchor Beacons and send the scanned Anchor Beacon information to the gateway. The gateway can accurately locate the mobile Beacons based on the Anchor Beacon information.
+
+```Java
+public void enableRepeaterScanner()
+{
+    //check capability
+    final KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+    if (!cfgCommon.isSupportTrigger(KBTriggerType.PeriodicallyEvent)
+            || !cfgCommon.isSupportScanSensor())
+    {
+        toastShow("device does not support repeat scanning");
+        return;
+    }
+
+    //set scanner parameters
+    KBCfgSensorScan scanPara = new KBCfgSensorScan();
+    scanPara.setScanDuration(100); //set scan duration 1seconds, unit is 10 ms
+    scanPara.setScanMode(KBAdvMode.Legacy); //only scan BLE4.0 legacy advertisement
+    scanPara.setScanRssi(-80); //Scan devices with signals greater than -80dBm
+    //The maximum number of peripheral devices during each scan
+    // When the number of devices scanned exceed 20, then stop scanning.
+    scanPara.setScanMax(20);
+
+    // Set a Trigger to periodically trigger scanning
+    KBCfgTrigger periodicTrigger = new KBCfgTrigger(0, KBTriggerType.PeriodicallyEvent);
+
+    //When a trigger occurs, it triggers a BLE scan and carries the scanned parameters in the broadcast.
+    periodicTrigger.setTriggerAction(KBTriggerAction.BLEScan | KBTriggerAction.Advertisement);
+    periodicTrigger.setTriggerAdvSlot(0);
+    periodicTrigger.setTriggerAdvPeriod(500f);
+    periodicTrigger.setTriggerAdvTime(10);
+    periodicTrigger.setTriggerTxPower(0);
+
+    //When a trigger occurs, change the UUID to carry the MAC address of the scanned peripheral device.
+    periodicTrigger.setTriggerAdvChangeMode(KBTriggerAdvChgMode.KBTriggerAdvChangeModeUUID);
+
+    //Set to start scanning every 60 seconds, unit is ms
+    periodicTrigger.setTriggerPara(60*1000);
+
+    ArrayList<KBCfgBase> triggerPara = new ArrayList<>(2);
+    triggerPara.add(scanPara);
+    triggerPara.add(periodicTrigger);
+
+    mBeacon.modifyConfig(triggerPara,
+            (bConfigSuccess, error) -> {
+                if (bConfigSuccess)
+                {
+                    toastShow("Enable periodic scanning success");
+                }
+                else
+                {
+                    toastShow("Enable periodic scanning failed");
+                }
+            });
+}
+```
+
+#### 4.3.5.5 Config disable period paramaters
 For some sensors, we may not want it to work all the time, such as the Door sensor, we may only want it to work at night. The advantage of this is, the power consumption can be reduced, and the unnecessary trigger can also be reduced.
 The sensors model that support configuring a disable period include: S1(Door sensor), S2(PIR sensor).
 
