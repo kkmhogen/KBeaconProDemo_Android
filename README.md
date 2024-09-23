@@ -689,7 +689,7 @@ void setSlot0AdvEncrypt()
         return;
     }
 
-    //check if KBeacon support long range or 2Mbps feature
+    //check if KBeacon support encrypt advertisement
     KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
     if (cfgCommon == null || !cfgCommon.isSupportEBeacon()){
         Log.v(LOG_TAG, "device does not support encrypt advertisement");
@@ -724,7 +724,7 @@ void setSlot0AdvEncrypt()
 }
 ```
 
-##### 4.3.3.6 Intermittent advertisement
+##### 4.3.3.5 Intermittent advertisement
 In some cases, you may want Beacon to broadcast intermittently. For example, broadcasting for 5 seconds every 2 minutes.  
 ![avatar](https://github.com/kkmhogen/KBeaconProDemo_Android/blob/main/periodic_adv.png?raw=true)  
 Example: Beacon broadcasts 5 seconds every 2 minutes in Slot1. The advertisement interval is 1 second in advertisement period. That is, the Beacon sleeps for 115 seconds and then broadcasts for 5 seconds.
@@ -739,8 +739,13 @@ void setSlot0PeriodicIBeaconAdv()
 
     //check if KBeacon support long range or 2Mbps feature
     KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
-    if (cfgCommon == null || !cfgCommon.isSupportEBeacon()){
-        Log.v(LOG_TAG, "device does not support encrypt advertisement");
+    if (cfgCommon == null || !cfgCommon.isSupportIBeacon()){
+        Log.v(LOG_TAG, "device does not support iBeacon advertisement");
+        return;
+    }
+
+    if (!cfgCommon.isSupportTrigger(KBTriggerType.PeriodicallyEvent)){
+        Log.v(LOG_TAG, "device does not support Periodically Event");
         return;
     }
 
@@ -751,8 +756,10 @@ void setSlot0PeriodicIBeaconAdv()
     periodicAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
     periodicAdv.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
 
-    //This parameter is very important, indicating that slot1 does
-    // not broadcast by default and only broadcasts when triggered by a Trigger.
+    /*
+    This parameter is very important, indicating that slot1 does
+    not broadcast by default and only broadcasts when triggered by a Trigger.
+    */
     periodicAdv.setAdvTriggerOnly(true);
 
     //add periodically trigger
@@ -760,6 +767,9 @@ void setSlot0PeriodicIBeaconAdv()
     periodicTrigger.setTriggerAction(KBTriggerAction.Advertisement);
     periodicTrigger.setTriggerAdvSlot(1);  //trigger slot 1 advertisement
     periodicTrigger.setTriggerAdvTime(5); //set adv duration to 5 seconds
+
+    //set trigger period, unit is ms
+    periodicTrigger.setTriggerPara(120*1000);
 
     ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
     cfgList.add(periodicAdv);
@@ -1714,11 +1724,11 @@ public void setDoorDisablePeriod() {
 
     //check device capability
     final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getCommonCfg();
-    if (oldCommonCfg != null && !oldCommonCfg.isSupportCutoffSensor())
-    {
-        toastShow("device does not support door cutoff sensor");
-        return;
-    }
+    if (!oldCommonCfg.isSupportCutoffSensor())
+        if (oldCommonCfg != null) {
+            toastShow("device does not support door cutoff sensor");
+            return;
+        }
 
     //enable PIR trigger
     KBCfgSensorBase sensorPara = new KBCfgSensorBase();
