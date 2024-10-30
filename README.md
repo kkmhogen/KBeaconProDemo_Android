@@ -918,8 +918,8 @@ The app can configure single click, double-click, triple-click, long-press the b
 * By KBeacon's default setting, long press button used to power on and off. Clicking button used to force the KBeacon enter connectable broadcast advertisement. So when you enable the long-press button trigger, the long-press power off function will be disabled. When you turn on the single/double/triple click trigger, the function of clicking to enter connectable broadcast state will also be disabled. After you disable button trigger, the default function about long press or click button will take effect again.  
 When you set multiple triggers to the same slot broadcast, you can turn on the Trigger content change mode. When different triggers are triggered, the content of UUID will change by UUID + trigger type.    
 * iBeacon UUID for single click trigger = iBeacon UUID + 0x4
-* iBeacon UUID for double trigger = iBeacon UUID + 0x5
-* iBeacon UUID for triple trigger = iBeacon UUID + 0x6
+* iBeacon UUID for double click trigger = iBeacon UUID + 0x5
+* iBeacon UUID for triple click trigger = iBeacon UUID + 0x6
 * iBeacon UUID for long press trigger = iBeacon UUID + 0x3
 
 1. Enable or button trigger event to advertisement.  
