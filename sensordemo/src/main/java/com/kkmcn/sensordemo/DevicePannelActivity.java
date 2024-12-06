@@ -540,7 +540,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         //option trigger para, If the following two parameters are omitted,
         // the trigger broadcast interval is 2560.0ms and the transmit power is -4dBm.
         btnTriggerPara.setTriggerAdvPeriod(200.0f);
-        btnTriggerPara.setTriggerTxPower(KBAdvTxPower.RADIO_Pos4dBm);
+        btnTriggerPara.setTriggerAdvTxPower(KBAdvTxPower.RADIO_Pos4dBm);
 
         //enable push button trigger
         mTriggerButtonAdv.setEnabled(false);
@@ -1796,7 +1796,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         periodicTrigger.setTriggerAdvSlot(0);
         periodicTrigger.setTriggerAdvPeriod(500f);
         periodicTrigger.setTriggerAdvTime(10);
-        periodicTrigger.setTriggerTxPower(0);
+        periodicTrigger.setTriggerAdvTxPower(0);
 
         //When a trigger occurs, change the UUID to carry the MAC address of the scanned peripheral device.
         periodicTrigger.setTriggerAdvChangeMode(KBTriggerAdvChgMode.KBTriggerAdvChangeModeUUID);

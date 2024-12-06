@@ -239,7 +239,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         //set slot 1 for advertisement long range advertisement
         KBCfgAdvEddyTLM tlmAdvCfg = new KBCfgAdvEddyTLM();
         tlmAdvCfg.setSlotIndex(1);
-        tlmAdvCfg.setAdvMode(KBAdvMode.LongRange);
+        tlmAdvCfg.setAdvMode(KBAdvMode.LongRangeCodedS8);
         tlmAdvCfg.setAdvConnectable(true);
         tlmAdvCfg.setAdvTriggerOnly(false);
         tlmAdvCfg.setAdvPeriod(5000.0f);
@@ -395,7 +395,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         encAdv.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
 
         //Set the AES KEY to change every 5 seconds.
-        encAdv.setInterval(5);
+        encAdv.setEncryptInterval(5);
 
         //set aes type to 0(ECB)
         encAdv.setAesType(KBCfgAdvEBeacon.AES_ECB_TYPE);

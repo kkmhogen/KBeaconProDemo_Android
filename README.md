@@ -36,7 +36,7 @@ minSdkVersion 24
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.2.8'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.3.0'
 }
 ```
 This library is also open source, please refer to this link.  
@@ -706,7 +706,7 @@ void setSlot0AdvEncrypt()
     encAdv.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
 
     //Set the AES KEY to change every 5 seconds.
-    encAdv.setInterval(5);
+    encAdv.setEncryptInterval(5);
 
     //set aes type to 0(ECB)
     encAdv.setAesType(KBCfgAdvEBeacon.AES_ECB_TYPE);

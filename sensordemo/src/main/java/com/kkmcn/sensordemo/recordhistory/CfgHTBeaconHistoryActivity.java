@@ -38,10 +38,11 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
     public final static int MSG_LOAD_NO_MORE_DATA = 302;
     public final static int MSG_READ_DATA_TIMEOUT = 303;
     public final static String DEVICE_MAC_ADDRESS = "DEVICE_MAC_ADDRESS";
-    public final static int MAX_READ_TIMEOUT_MS = 10000;
 
-
-    public static final int MAX_READ_DATA_RCD = 30;
+    //The timeout period for reading sensor data needs to be adjusted according to the number of records in the read area.
+    //We recommend that you have a timeout of 10 seconds for every 100 records.
+    //If 600 records are read at a time, the recommended timeout period is 60 seconds.
+    public final static int MAX_READ_TIMEOUT_MS = 30000;
 
     public LayoutInflater mInflater;
     public ListView mListView;
@@ -216,7 +217,7 @@ public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsLi
         mBeacon.readSensorRecord(KBSensorType.HTHumidity,
                 KBRecordDataRsp.INVALID_DATA_RECORD_POS,
                 KBSensorReadOption.NewRecord,
-                100,
+                300,
                 (bConfigSuccess, dataRsp, error) -> {
                     if (!bConfigSuccess){
                         toastShow("read data failed");
