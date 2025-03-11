@@ -36,7 +36,7 @@ minSdkVersion 24
 ```Java
 dependencies {
    …
-   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.3.0'
+   implementation 'com.kkmcn.kbeaconlib2:kbeaconlib2:1.3.1'
 }
 ```
 This library is also open source, please refer to this link.  
@@ -681,6 +681,7 @@ In some special cases, we may need to encrypt broadcast packets. Prevent third-p
 By setting the broadcast type to EBeacon, we can encrypt the UUID, and the AES key will dynamically change according to the UTC time, so it can prevent copying and decryption.
 
 ```Java
+//set slot 0 to adv UUID encryption
 void setSlot0AdvEncrypt()
 {
     if (!mBeacon.isConnected())
@@ -719,6 +720,43 @@ void setSlot0AdvEncrypt()
         else
         {
             toastShow("Enable encrypt advertisement failed:" + error.errorCode);
+        }
+    });
+}
+
+//enable KSensor encrypt advertisement
+void setKSensorAdvEncrypt()
+{
+    if (!mBeacon.isConnected())
+    {
+        Log.v(LOG_TAG, "device was disconnected");
+        return;
+    }
+
+    //check if KBeacon support encrypt advertisement
+    KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
+    if (cfgCommon == null || !cfgCommon.isSupportEBeacon()){
+        Log.v(LOG_TAG, "device does not support encrypt advertisement");
+        return;
+    }
+
+    //set basic parameters.
+    KBCfgAdvKSensor encAdv = new KBCfgAdvKSensor();
+    encAdv.setSlotIndex(0);
+    encAdv.setAdvPeriod(1000f);
+    encAdv.setTxPower(KBAdvTxPower.RADIO_0dBm);
+
+    //enable KSensor encrypt advertisement
+    encAdv.setAesType(KBCfgAdvEBeacon.AES_ECB_TYPE);
+
+    mBeacon.modifyConfig(encAdv, (bConfigSuccess, error) -> {
+        if (bConfigSuccess)
+        {
+            toastShow("Enable encrypt ksensor adv success");
+        }
+        else
+        {
+            toastShow("Enable encrypt ksensor adv failed:" + error.errorCode);
         }
     });
 }
@@ -1656,12 +1694,18 @@ The repeater solution refers to Beacon's support for scanning surrounding Beacon
 * Increase the positioning accuracy of Beacon. Multiple Anchor Beacons can be deployed in fixed locations, and mobile Beacons can periodically scan for Anchor Beacons and send the scanned Anchor Beacon information to the gateway. The gateway can accurately locate the mobile Beacons based on the Anchor Beacon information.
 
 ```Java
+//set repeater scanning
 public void enableRepeaterScanner()
 {
+    if (!mBeacon.isConnected())
+    {
+        toastShow("Please connect to device first");
+        return;
+    }
+
     //check capability
     final KBCfgCommon cfgCommon = mBeacon.getCommonCfg();
-    if (!cfgCommon.isSupportTrigger(KBTriggerType.PeriodicallyEvent)
-            || !cfgCommon.isSupportScanSensor())
+    if (!cfgCommon.isSupportScanSensor())
     {
         toastShow("device does not support repeat scanning");
         return;
@@ -1669,34 +1713,34 @@ public void enableRepeaterScanner()
 
     //set scanner parameters
     KBCfgSensorScan scanPara = new KBCfgSensorScan();
-    scanPara.setScanDuration(100); //set scan duration 1seconds, unit is 10 ms
-    scanPara.setScanMode(KBAdvMode.Legacy); //only scan BLE4.0 legacy advertisement
-    scanPara.setScanRssi(-80); //Scan devices with signals greater than -80dBm
+
+    //set scan peripheral device every 300 seconds
+    scanPara.setScanInterval(300);
+
+    //change scan interval to 60 seconds when detected motion
+    if (cfgCommon.isSupportAccSensor())
+    {
+        scanPara.setMotionScanInterval(60);
+    }
+
+    //set scan duration 1seconds, unit is 10 ms
+    scanPara.setScanDuration(100);
+
+    //only scan BLE4.0 legacy advertisement
+    scanPara.setScanMode(KBAdvMode.Legacy);
+
+    //Scan devices with signals greater than -80dBm
+    scanPara.setScanRssi(-80);
+
     //The maximum number of peripheral devices during each scan
     // When the number of devices scanned exceed 20, then stop scanning.
     scanPara.setScanMax(20);
 
-    // Set a Trigger to periodically trigger scanning
-    KBCfgTrigger periodicTrigger = new KBCfgTrigger(0, KBTriggerType.PeriodicallyEvent);
+    //set scan result advertisement on slot 0
+    //please make sure the slot 0 was set to iBeacon advertisement
+    scanPara.setScanResultAdvSlot(0);
 
-    //When a trigger occurs, it triggers a BLE scan and carries the scanned parameters in the broadcast.
-    periodicTrigger.setTriggerAction(KBTriggerAction.BLEScan | KBTriggerAction.Advertisement);
-    periodicTrigger.setTriggerAdvSlot(0);
-    periodicTrigger.setTriggerAdvPeriod(500f);
-    periodicTrigger.setTriggerAdvTime(10);
-    periodicTrigger.setTriggerTxPower(0);
-
-    //When a trigger occurs, change the UUID to carry the MAC address of the scanned peripheral device.
-    periodicTrigger.setTriggerAdvChangeMode(KBTriggerAdvChgMode.KBTriggerAdvChangeModeUUID);
-
-    //Set to start scanning every 60 seconds, unit is ms
-    periodicTrigger.setTriggerPara(60*1000);
-
-    ArrayList<KBCfgBase> triggerPara = new ArrayList<>(2);
-    triggerPara.add(scanPara);
-    triggerPara.add(periodicTrigger);
-
-    mBeacon.modifyConfig(triggerPara,
+    mBeacon.modifyConfig(scanPara,
             (bConfigSuccess, error) -> {
                 if (bConfigSuccess)
                 {
@@ -1704,7 +1748,7 @@ public void enableRepeaterScanner()
                 }
                 else
                 {
-                    toastShow("Enable periodic scanning failed");
+                    toastShow("Enable periodic scanning failed, please make sure the slot0 was setting to iBeacon");
                 }
             });
 }
@@ -2237,6 +2281,7 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
+* 2025.3.11 v1.93: add encryption advertisement
 * 2024.9.3 v1.92: add parking sensor
 * 2024.1.20 v1.91 add AOA and tilt angle trigger
 * 2023.6.29 V1.9 add LED blink setting, add channel mask setting, support new humidity sensor
