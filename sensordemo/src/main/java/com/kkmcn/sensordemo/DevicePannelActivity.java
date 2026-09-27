@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -117,6 +119,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         mPref = SharePreferenceMgr.shareInstance(this);
         setContentView(R.layout.device_pannel);
+        setupEdgeToEdgeWithInsets();
         mBeaconStatus = (TextView)findViewById(R.id.connection_states);
         mAdvType = (TextView) findViewById(R.id.beaconAdvType);
         mBeaconModel = (TextView) findViewById(R.id.beaconModle);
@@ -215,9 +218,14 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             if (mBeacon.isConnected()) {
                 KBCfgCommon commCfg = mBeacon.getCommonCfg();
                 if (commCfg != null && commCfg.isSupportHumiditySensor()) {
+
+                    readTempHistoryRecordReverseExample();
+                    /*
                     Intent intent = new Intent(this, CfgHTBeaconHistoryActivity.class);
                     intent.putExtra(CfgHTBeaconHistoryActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());   //field type
                     startActivityForResult(intent, 1);
+
+                    */
                 } else {
                     toastShow("not support humidity sensor");
                 }
@@ -239,8 +247,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 startActivityForResult(intent, 1);
             }
         }else if (id == R.id.ringDevice) {
-           //ringDevice();
-
+           ringDevice();
             //enableRepeaterScanner();
             /*
             mBeacon.readRemoteRssi((rssi, status) -> {
@@ -1458,7 +1465,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             int ringType = 0x2;   //LED flash default
 
             //check if need beep
-            if (cfgCommon != null && !cfgCommon.isSupportBeep())
+            if (cfgCommon != null && cfgCommon.isSupportBeep())
             {
                 ringType = ringType | 0x1;
             }
@@ -1534,12 +1541,14 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     //reverse read record example
     private long mNextReadReverseIndex = KBRecordDataRsp.INVALID_DATA_RECORD_POS;
     private int mTotalReverseReadIndex = 0;
+
+    private static int MSG_READ_NEXT_HISTORY_DATA = 101;
     public void readTempHistoryRecordReverseExample()
     {
         mBeacon.readSensorRecord(KBSensorType.HTHumidity,
                 mNextReadReverseIndex, //read from last pos
                 KBSensorReadOption.ReverseOrder,  //read direction type
-                50,   //number of records the app want to read
+                60,   //number of records the app want to read
                 (bSuccess, dataRsp, error) -> {
                     if (bSuccess)
                     {
@@ -1555,14 +1564,28 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                         }
                         if (dataRsp.readDataNextPos == KBRecordDataRsp.INVALID_DATA_RECORD_POS)
                         {
+                            mNextReadReverseIndex = 0;
                             Log.v(LOG_TAG, "Read data complete");
                         }
                         else
                         {
                             Log.v(LOG_TAG, "next read position:" + dataRsp.readDataNextPos);
+                            mHandler.sendEmptyMessage(MSG_READ_NEXT_HISTORY_DATA);
                         }
                     }
                 });
+    }
+
+
+    protected Handler mHandler = new MainActivityHandler();
+    class MainActivityHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == MSG_READ_NEXT_HISTORY_DATA)
+            {
+                readTempHistoryRecordReverseExample();
+            }
+        }
     }
 
     //reverse read record example

@@ -7,6 +7,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -14,6 +15,9 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 /**
  * Created by hogen on 2018/9/22.
@@ -37,6 +41,28 @@ public class AppBaseActivity extends AppCompatActivity {
         }
     }
 
+    protected void setupEdgeToEdgeWithInsets() {
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        View contentView = findViewById(android.R.id.content);
+        if (contentView == null){
+            return;
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(contentView,
+                (view, insets) -> {
+                    androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                    view.setPadding(
+                            systemBars.left,
+                            systemBars.top,
+                            systemBars.right,
+                            systemBars.bottom
+                    );
+                    return insets;
+                }
+        );
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         return true;
@@ -44,10 +70,6 @@ public class AppBaseActivity extends AppCompatActivity {
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         // 是否触发按键为back键
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            finish();
-            return true;
-        }
         return true;
     }
 

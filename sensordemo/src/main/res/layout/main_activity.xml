@@ -110,7 +110,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:max="80"
+                android:max="70"
                 android:layout_weight="1" />
 
             <TextView
@@ -131,6 +131,7 @@
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_container"
+        android:background="@color/white"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 

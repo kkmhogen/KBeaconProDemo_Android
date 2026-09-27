@@ -58,6 +58,7 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cfg_beacon_dfu);
+        setupEdgeToEdgeWithInsets();
 
         final Intent intent = getIntent();
         String mMacAddress = intent.getStringExtra(DEVICE_MAC_ADDRESS);
@@ -392,7 +393,7 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
                     dfuComplete(getString(R.string.DEVICE_LATEST_VERSION));
                 }
                 else{
-                    dfuComplete(getString(R.string.UPDATE_NETWORK_FAIL) + error.getMessage());
+                    dfuComplete(getString(R.string.UPDATE_NETWORK_FAIL));
                 }
             }
         });
